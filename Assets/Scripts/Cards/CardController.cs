@@ -7,10 +7,10 @@ public class CardController : MonoBehaviour
     private CardState _cardState;
 
     // cash for quick coding
-    public bool IsBasement => _card.IsBasement;
-    public bool HaveFraction1Effect => _card.HaveFraction1Effect;
-    public bool HaveFraction2Effect => _card.HaveFraction2Effect;
-    public bool HaveDisposeEffect => _card.HaveDisposeEffect;
+    public bool IsBase => _card.Shield != null;
+    public bool HaveFraction1Effect => _card.Effects.FindAll(p => p.Type == EffectType.Ally1).Count > 0;
+    public bool HaveFraction2Effect => _card.Effects.FindAll(p => p.Type == EffectType.Ally2).Count > 0;
+    public bool HaveScrapEffect => _card.Effects.FindAll(p => p.Type == EffectType.Scrap).Count > 0;
 
     //ref to go
     private GameObject _go;

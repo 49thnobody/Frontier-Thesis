@@ -2,5 +2,5 @@
 {
     None,
     White,
-    Black
+    Outpost
 }

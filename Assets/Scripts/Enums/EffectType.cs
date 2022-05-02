@@ -1,8 +1,8 @@
 ﻿public enum EffectType
 {
     None,
-    Normal,
-    Fractional1,
-    Fractional2,
-    Dispose
+    Priamry,
+    Ally1,
+    Ally2,
+    Scrap
 }

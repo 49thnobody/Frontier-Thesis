@@ -1,4 +1,4 @@
-public enum Fraction
+public enum Faction
 {
     None,
     Slugs, //green
