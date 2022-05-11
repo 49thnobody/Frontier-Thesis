@@ -1,8 +1,13 @@
-﻿using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class DragController : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class ResourceController : OutputController, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
+    public ResourceType Type;
+
+    #region Dragging
     public Transform Parent;
     private Camera _mainCamera;
     private Vector3 _offset;
@@ -12,13 +17,12 @@ public class DragController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
     {
         _mainCamera = Camera.main;
         _canvasGroup = GetComponent<CanvasGroup>();
+        Parent = transform.parent;
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
         _offset = transform.position - _mainCamera.ScreenToWorldPoint(eventData.position);
-        Parent = transform.parent;
-        transform.SetParent(Parent.parent);
         _canvasGroup.blocksRaycasts = false;
     }
 
@@ -33,4 +37,5 @@ public class DragController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         transform.SetParent(Parent);
         _canvasGroup.blocksRaycasts = true;
     }
+    #endregion
 }
