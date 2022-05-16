@@ -1,8 +1,17 @@
-﻿public enum EffectType
+public enum EffectType
 {
-    None,
-    Priamry,
-    Ally1,
-    Ally2,
-    Scrap
+    Trade,
+    Combat,
+    Authority,
+    Draw,
+    DestroyBase,
+    ForceToDiscard,
+    ScrapFromHand,
+    ScrapFromDiscardPile,
+    ScrapFromHandOrDiscardPile,
+    ScrapFromTradeRow,
+    ScrapXFromTradeRowAndGetCambatFromPrice,
+    ScrapXFromHandAndGetXDamage,
+    DiscardXCardAndGetXYCombat,
+
 }

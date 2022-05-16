@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -13,6 +14,7 @@ public class ResourceController : OutputController, IBeginDragHandler, IDragHand
 
     private void Awake()
     {
+        _text = GetComponentInChildren<TextMeshProUGUI>();
         _mainCamera = Camera.main;
         _canvasGroup = GetComponent<CanvasGroup>();
         Parent = transform.parent;

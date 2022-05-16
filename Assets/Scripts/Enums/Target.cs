@@ -2,7 +2,7 @@
 {
     None,
     Enemy,
-    OnlyEnemyBasement,
+    EnemyBasement,
     Self,
     Hand,
     DiscardDeck,

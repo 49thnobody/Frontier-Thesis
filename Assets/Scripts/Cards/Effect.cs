@@ -1,17 +1,18 @@
+using System.Collections.Generic;
+
 public struct Effect
 {
-    public Target Target;
+    public EffectGroup Group;
     public EffectType Type;
     public int Value;
     public bool IsApplied;
 
-    public Effect(Target target,
-                  EffectType type,
+    public Effect(EffectGroup group, EffectType type,
                   int value)
     {
-        Target = target;
-        Value = value;
         Type = type;
+        Value = value;
+        Group = group;
         IsApplied = false;
     }
 }

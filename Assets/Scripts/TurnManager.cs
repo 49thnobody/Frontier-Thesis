@@ -8,4 +8,6 @@ public class TurnManager : MonoBehaviour
     {
         instance = this;
     }
+    
+    public Turn Turn { get; private set; }
 }

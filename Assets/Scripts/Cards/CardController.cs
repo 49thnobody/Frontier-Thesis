@@ -1,19 +1,44 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
-public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+//public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
 {
     #region Card Info
     // card
-    private Card _card;
-    private CardState _cardState;
+    public Card Card { get; private set; }
+    public CardState State { get; private set; }
 
     // cash for quick coding
-    public bool IsBase => _card.Shield != null;
-    public bool HaveAlly1Effect => _card.Effects.FindAll(p => p.Type == EffectType.Ally1).Count > 0;
-    public bool HaveAlly2Effect => _card.Effects.FindAll(p => p.Type == EffectType.Ally2).Count > 0;
-    public bool HaveScrapEffect => _card.Effects.FindAll(p => p.Type == EffectType.Scrap).Count > 0;
+    public bool IsBase => Card.Shield != null;
+    public bool HaveAlly1Effect => Card.Effects.FindAll(p => p.Group == EffectGroup.Ally1).Count > 0;
+    public bool HaveAlly2Effect => Card.Effects.FindAll(p => p.Group == EffectGroup.Ally2).Count > 0;
+    public bool HaveScrapEffect => Card.Effects.FindAll(p => p.Group == EffectGroup.Scrap).Count > 0;
     #endregion
+
+    public Image Image;
+    public Image ActiveFrame;
+
+    public void Set(Card card)
+    {
+        Card = card;
+        Image.sprite = card.Sprite;
+    }
+
+    public void SetState(CardState state)
+    {
+        State = state;
+        // dunno
+    }
+
+    public void SetActive(bool active)
+    {
+        if (active)
+            ActiveFrame.enabled = true;
+        else
+            ActiveFrame.enabled = false;
+    }
 
     #region Dragging
     public Transform Parent;
@@ -45,6 +70,30 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
     {
         transform.SetParent(Parent);
         _canvasGroup.blocksRaycasts = true;
-    } 
+    }
+    #endregion
+
+    #region Dropping
+    public void OnDrop(PointerEventData eventData)
+    {
+        CardController card = eventData.pointerDrag.GetComponent<CardController>();
+        ResourceController resource = eventData.pointerDrag.GetComponent<ResourceController>();
+
+        if (resource)
+        {
+            if (resource.Type == ResourceType.Trade && State == CardState.TradeRow)
+                ; // TODO - buy a card
+            if (resource.Type == ResourceType.Combat && IsBase)
+                ; // TODO - damage check and destroy base
+        }
+
+        if (card)
+        {
+            Effect? effect = Card.Effects.Find(p => p.Type == EffectType.DestroyBase);
+            if (effect == null || !IsBase) return;
+
+            // TODO - destroy base
+        }
+    }
     #endregion
 }
