@@ -22,19 +22,26 @@ public class PlayerController : MonoBehaviour
         instance = this;
         _discardPile = new List<Card>();
         _hand = new List<CardController>();
+        _deck = new List<Card>();   
         Bases = new List<CardController>();
     }
 
     private void Start()
     {
         GameManager.instance.OnGameStart += GameStart;
+
+        GameManager.instance.OnTestDraw += TestDraw;
     }
 
-    public void GameStart()
+    private void TestDraw()
     {
-        Authority.UpdateValue(50);
-        _deck = CardSystem.instance.StartingDeck;
-        Shuffle();
+        Reset();
+
+        for (int i = 0; i < 10; i++)
+        {
+            _deck.Add(new Card("Burrower", 3, Faction.Slugs,
+                new List<Effect>() { new Effect(EffectGroup.Priamry, EffectType.Draw, 1) }));
+        }
 
         for (int i = 0; i < 5; i++)
         {
@@ -42,15 +49,45 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public void GameStart()
+    {
+        Reset();
+        _deck.AddRange(CardSystem.instance.StartingDeck);
+
+        for (int i = 0; i < 5; i++)
+        {
+            DrawCard();
+        }
+    }
+
+    private void Reset()
+    {
+        Authority.UpdateValue(50);
+
+        for (int i = _hand.Count - 1; i >= 0; i--)
+        {
+            Destroy(_hand[i].gameObject);
+            _hand.RemoveAt(i);
+        }
+
+        for (int i = Bases.Count - 1; i >= 0; i--)
+        {
+            Destroy(Bases[i]);
+            Bases.RemoveAt(i);
+        }
+
+        _deck.Clear();
+    }
+
     public void DrawCard()
     {
+        if (_deck.Count == 0)
+            Shuffle();
+
         CardController card = Instantiate(CardPrefab, Hand);
         card.Set(_deck[_deck.Count - 1]);
         _hand.Add(card);
         _deck.RemoveAt(_deck.Count - 1);
-
-        if (_deck.Count == 0)
-            Shuffle();
     }
 
     private void Shuffle()
@@ -58,8 +95,12 @@ public class PlayerController : MonoBehaviour
         var allCards = new List<Card>();
         allCards.AddRange(_deck);
         allCards.AddRange(_discardPile);
+        _deck.Clear();
+        _discardPile.Clear();
 
-        while (_deck.Count < allCards.Count)
+        int cardCount = allCards.Count;
+
+        while (_deck.Count < cardCount)
         {
             int currentIndex = Random.Range(0, allCards.Count);
 
@@ -68,7 +109,6 @@ public class PlayerController : MonoBehaviour
         }
 
         _deck = allCards;
-        _discardPile.Clear();
     }
 
     public void PlaceBase(CardController card)

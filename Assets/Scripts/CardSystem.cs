@@ -41,6 +41,11 @@ public class CardSystem : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        GameManager.instance.OnGameStart += GameStart;
+    }
+
     public void GameStart()
     {
         InitTradeRow();
@@ -58,6 +63,7 @@ public class CardSystem : MonoBehaviour
             var newCard = Instantiate(CardPrefab, TradeRowLayout);
             newCard.Set(_tradeDeck[_tradeDeck.Count - 1 - i]);
             _tradeRow.Add(newCard);
+            newCard.SetState(CardState.TradeRow);
         }
     }
 

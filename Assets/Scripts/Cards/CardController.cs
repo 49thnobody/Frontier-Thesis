@@ -29,7 +29,24 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
     public void SetState(CardState state)
     {
         State = state;
-        // dunno
+        switch (State)
+        {
+            case CardState.TradeRow:
+            case CardState.DiscardPile:
+            case CardState.EnemyBuy:
+            case CardState.Basement:
+                if (IsBase)
+                    transform.Rotate(new Vector3(0, 0, -90));
+                else
+                    transform.Rotate(new Vector3(0, 0, 90));
+                break;
+            case CardState.Hand:
+            case CardState.PlayArea:
+                transform.Rotate(new Vector3(0, 0, 0));
+                break;
+            default:
+                break;
+        }
     }
 
     public void SetActive(bool active)
@@ -82,7 +99,7 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         if (resource)
         {
             if (resource.Type == ResourceType.Trade && State == CardState.TradeRow)
-                ; // TODO - buy a card
+                ; // TODO - trade check and buy a card
             if (resource.Type == ResourceType.Combat && IsBase)
                 ; // TODO - damage check and destroy base
         }
@@ -90,9 +107,10 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         if (card)
         {
             Effect? effect = Card.Effects.Find(p => p.Type == EffectType.DestroyBase);
-            if (effect == null || !IsBase) return;
+            if (effect == null || !IsBase || State != CardState.Basement) return;
 
-            // TODO - destroy base
+            EnemyController.instance.Bases.Remove(this);
+            Destroy(gameObject);
         }
     }
     #endregion

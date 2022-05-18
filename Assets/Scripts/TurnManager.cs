@@ -7,6 +7,8 @@ public class TurnManager : MonoBehaviour
     private void Awake()
     {
         instance = this;
+
+        Turn = Turn.PlayerTurn;
     }
     
     public Turn Turn { get; private set; }

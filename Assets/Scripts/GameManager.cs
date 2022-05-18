@@ -12,8 +12,16 @@ public class GameManager : MonoBehaviour
     public delegate void GameStart();
     public event GameStart OnGameStart;
 
+    public delegate void TestDraw();
+    public event TestDraw OnTestDraw;
+
     public void Play()
     {
         OnGameStart?.Invoke();
+    }
+
+    public void TestingDraw()
+    {
+        OnTestDraw?.Invoke();
     }
 }

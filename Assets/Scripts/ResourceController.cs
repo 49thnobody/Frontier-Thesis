@@ -7,7 +7,7 @@ public class ResourceController : OutputController, IBeginDragHandler, IDragHand
     public ResourceType Type;
 
     #region Dragging
-    public Transform Parent;
+    private Vector3 _myPosition;
     private Camera _mainCamera;
     private Vector3 _offset;
     private CanvasGroup _canvasGroup;
@@ -17,7 +17,7 @@ public class ResourceController : OutputController, IBeginDragHandler, IDragHand
         _text = GetComponentInChildren<TextMeshProUGUI>();
         _mainCamera = Camera.main;
         _canvasGroup = GetComponent<CanvasGroup>();
-        Parent = transform.parent;
+        _myPosition = transform.position;
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -34,7 +34,7 @@ public class ResourceController : OutputController, IBeginDragHandler, IDragHand
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        transform.SetParent(Parent);
+        transform.position = _myPosition;
         _canvasGroup.blocksRaycasts = true;
     }
     #endregion

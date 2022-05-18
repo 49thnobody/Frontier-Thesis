@@ -48,7 +48,7 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
         switch (TurnManager.instance.Turn)
         {
             case Turn.PlayerTurn:
-                _cards.AddRange(PlayerController.instance.Bases.ConvertAll(p=>p.Card));
+                _cards.AddRange(PlayerController.instance.Bases.ConvertAll(p => p.Card));
                 break;
             case Turn.EnemyTurn:
                 break;
@@ -89,7 +89,7 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
                     break;
                 case EffectType.DestroyBase:
                     // enemy does not have card with this type of effect
-
+                    // and doesnt process here
                     break;
                 case EffectType.ForceToDiscard:
                     break;
@@ -126,6 +126,11 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
         {
             // show options to choose
             // TODO
+        }
+        else if (card.Card.Effects.FindAll(p => p.Type == EffectType.DestroyBase).Count > 0)
+        {
+            card.SetActive(true);
+            PlayCard(card.Card);
         }
         else
         {

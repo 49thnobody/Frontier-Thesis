@@ -1,11 +1,9 @@
 ﻿public enum CardState
 {
-    TradeDeck,
     TradeRow,
     DiscardPile,
-    Deck,
     Hand,
-    Playing,
+    PlayArea,
     Basement,
-    Scraped
+    EnemyBuy
 }
