@@ -25,7 +25,7 @@ public class PlayerController : MonoBehaviour
         instance = this;
         _discardPile = new List<Card>();
         _hand = new List<CardController>();
-        _handCards = new List<CardController>();
+        _handCards = new List<Card>();
         _deck = new List<Card>();
         Bases = new List<CardController>();
     }
