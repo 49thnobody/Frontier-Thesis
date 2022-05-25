@@ -1,5 +1,6 @@
 ﻿public enum DropPlaceType
 {
     ScrapHeap,
-    EnemyAuthority
+    EnemyAuthority,
+    ScrapPanel
 }

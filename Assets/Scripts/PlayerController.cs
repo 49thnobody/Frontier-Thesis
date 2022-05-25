@@ -7,22 +7,24 @@ public class PlayerController : MonoBehaviour
 
     public OutputController Authority;
 
-    public Transform Hand;
+    public Transform HandLayout;
     public CardController CardPrefab;
     private List<CardController> _hand;
+    public List<Card> Hand => _hand.ConvertAll(p => p.Card);
 
     public Transform BaseLayout;
     public List<CardController> Bases;
 
     private List<Card> _deck;
     private List<Card> _discardPile;
+    public List<Card> DiscardPile => _discardPile;
 
     private void Awake()
     {
         instance = this;
         _discardPile = new List<Card>();
         _hand = new List<CardController>();
-        _deck = new List<Card>();   
+        _deck = new List<Card>();
         Bases = new List<CardController>();
     }
 
@@ -31,6 +33,20 @@ public class PlayerController : MonoBehaviour
         GameManager.instance.OnGameStart += GameStart;
 
         GameManager.instance.OnTestDraw += TestDraw;
+
+        CardSystem.instance.OnScrap += OnScrap;
+    }
+
+    private void OnScrap(Card card)
+    {
+        if (_discardPile.Contains(card))
+            _discardPile.Remove(card);
+        if (_hand.ConvertAll(p => p.Card).Contains(card))
+        {
+            var cardC = _hand.Find(p => p.Card == card);
+            _hand.Remove(cardC);
+            Destroy(cardC.gameObject);
+        }
     }
 
     private void TestDraw()
@@ -84,10 +100,21 @@ public class PlayerController : MonoBehaviour
         if (_deck.Count == 0)
             Shuffle();
 
-        CardController card = Instantiate(CardPrefab, Hand);
+        CardController card = Instantiate(CardPrefab, HandLayout);
         card.Set(_deck[_deck.Count - 1]);
         _hand.Add(card);
         _deck.RemoveAt(_deck.Count - 1);
+    }
+
+    public void DiscardCard()
+    {
+
+    }
+
+    public void OnBuy(Card card)
+    {
+        _discardPile.Add(card);
+        // update ui
     }
 
     private void Shuffle()

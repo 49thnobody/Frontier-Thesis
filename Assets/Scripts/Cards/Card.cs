@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public struct Card
+public class Card
 {
     public string Name;
     public int Cost;
-    public Faction Fraction;
+    public Faction Faction;
     public List<Effect> Effects;
     public bool IsChoiceRequired;
     public Shield Shield;
@@ -25,7 +25,7 @@ public struct Card
     {
         Name = name;
         Cost = cost;
-        Fraction = fraction;
+        Faction = fraction;
         Effects = effects;
         Shield = shield;
         Effects = effects;

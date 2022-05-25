@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-public struct Effect
+public class Effect
 {
     public EffectGroup Group;
     public EffectType Type;

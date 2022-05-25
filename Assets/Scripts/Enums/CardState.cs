@@ -5,5 +5,7 @@
     Hand,
     PlayArea,
     Basement,
-    EnemyBuy
+    EnemyBuy,
+    ScrapPanel,
+    ScrapPanelChoosen
 }

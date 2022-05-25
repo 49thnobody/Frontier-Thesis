@@ -42,6 +42,8 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
                 break;
             case CardState.Hand:
             case CardState.PlayArea:
+            case CardState.ScrapPanel:
+            case CardState.ScrapPanelChoosen:
                 transform.Rotate(new Vector3(0, 0, 0));
                 break;
             default:
@@ -55,6 +57,12 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
             ActiveFrame.enabled = true;
         else
             ActiveFrame.enabled = false;
+    }
+
+    public void Scrap()
+    {
+        CardSystem.instance.ToScrap(Card);
+        Destroy(gameObject);
     }
 
     #region Dragging
@@ -99,14 +107,20 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         if (resource)
         {
             if (resource.Type == ResourceType.Trade && State == CardState.TradeRow)
-                ; // TODO - trade check and buy a card
+            {
+                if (PlayAreaController.instance.BuyCard(Card))
+                {
+                    PlayerController.instance.OnBuy(Card);
+                    CardSystem.instance.OnBuy(this);
+                }
+            }
             if (resource.Type == ResourceType.Combat && IsBase)
                 ; // TODO - damage check and destroy base
         }
 
         if (card)
         {
-            Effect? effect = Card.Effects.Find(p => p.Type == EffectType.DestroyBase);
+            Effect effect = Card.Effects.Find(p => p.Type == EffectType.DestroyBase);
             if (effect == null || !IsBase || State != CardState.Basement) return;
 
             EnemyController.instance.Bases.Remove(this);

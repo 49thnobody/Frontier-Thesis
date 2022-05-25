@@ -61,12 +61,40 @@ public class CardSystem : MonoBehaviour
         for (int i = 0; i < 5; i++)
         {
             var newCard = Instantiate(CardPrefab, TradeRowLayout);
-            newCard.Set(_tradeDeck[_tradeDeck.Count - 1 - i]);
             _tradeRow.Add(newCard);
             newCard.SetState(CardState.TradeRow);
+            Draw(i);
         }
     }
 
+    public delegate void Scrap(Card card);
+    public event Scrap OnScrap;
+
+    public void ToScrap(Card card)
+    {
+        if (_tradeRow.ConvertAll(p => p.Card).Contains(card))
+        {
+            var index = _tradeRow.FindIndex(p => p.Card == card);
+            _tradeDeck.Remove(card);
+            Draw(index);
+        }
+        else if (_tradeDeck.Contains(card))
+            _tradeDeck.Remove(card);
+        OnScrap?.Invoke(card);
+    }
+
+    private void Draw(int index)
+    {
+        _tradeRow[index].Set(_tradeDeck[_tradeDeck.Count - 1]);
+        _tradeDeck.RemoveAt(_tradeDeck.Count - 1);
+    }
+
+    public void OnBuy(CardController card)
+    {
+        int index = _tradeRow.FindIndex(p => p == card);
+
+        Draw(index);
+    }
 
     public CardController CardPrefab;
 
@@ -74,4 +102,5 @@ public class CardSystem : MonoBehaviour
     private List<Card> _tradeDeck;
     public Transform TradeRowLayout;
     private List<CardController> _tradeRow;
+    public List<Card> TradeRow => _tradeRow.ConvertAll(p => p.Card);
 }

@@ -3,6 +3,9 @@ using UnityEngine.EventSystems;
 
 public class DropController : MonoBehaviour, IDropHandler
 {
+    public delegate void ScrapPanelDrop(CardController card);
+    public event ScrapPanelDrop OnScrapDrop;
+
     public DropPlaceType Type;
     public void OnDrop(PointerEventData eventData)
     {
@@ -11,8 +14,17 @@ public class DropController : MonoBehaviour, IDropHandler
 
         if (card)
         {
+            if (Type == DropPlaceType.ScrapHeap && card.HaveScrapEffect)
+            {
+                foreach (var effect in card.Card.ScrapEffects)
+                {
+                    PlayAreaController.instance.PlayEffect(effect);
+                }
 
-            if (Type == DropPlaceType.ScrapHeap) ;//TODO - scrap a card
+                card.Scrap();
+            }
+
+            if (Type == DropPlaceType.ScrapPanel) OnScrapDrop?.Invoke(card);
         }
 
         if (resource)

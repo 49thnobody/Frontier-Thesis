@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -22,10 +23,16 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
     public Transform CardLayout;
 
     private List<Card> _cards;
+    private Dictionary<Faction, int> _factions;
 
     private void Start()
     {
         GameManager.instance.OnGameStart += GameStart;
+        _factions = new Dictionary<Faction, int>();
+        _factions.Add(Faction.Slugs, 0);
+        _factions.Add(Faction.Technocult, 0);
+        _factions.Add(Faction.StarEmpire, 0);
+        _factions.Add(Faction.TradeFederation, 0);
     }
 
     public void GameStart()
@@ -63,52 +70,123 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
 
         foreach (var effect in card.PrimaryEffects)
         {
-            switch (effect.Type)
-            {
-                case EffectType.Trade:
-                    _trade += effect.Value;
-                    break;
-                case EffectType.Combat:
-                    _combat += effect.Value;
-                    break;
-                case EffectType.Authority:
-                    _authority += effect.Value;
-                    break;
-                case EffectType.Draw:
-                    switch (TurnManager.instance.Turn)
-                    {
-                        case Turn.PlayerTurn:
-                            PlayerController.instance.DrawCard();
-                            break;
-                        case Turn.EnemyTurn:
-                            EnemyController.instance.DrawCard();
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                case EffectType.DestroyBase:
-                    // enemy does not have card with this type of effect
-                    // and doesnt process here
-                    break;
-                case EffectType.ForceToDiscard:
-                    break;
-                case EffectType.ScrapFromHand:
-                    break;
-                case EffectType.ScrapFromDiscardPile:
-                    break;
-                case EffectType.ScrapFromHandOrDiscardPile:
-                    break;
-                case EffectType.ScrapFromTradeRow:
-                    break;
-                default:
-                    break;
-            }
+            PlayEffect(effect);
         }
 
+        if (card.Faction != Faction.None)
+        {
+            _factions[card.Faction]++;
+
+            PlayFactionEffects();
+        }
+    }
+
+    private void PlayFactionEffects()
+    {
+        var cardsWithFactionEffect = _cards.FindAll(p => p.Ally1Effects.Count != 0);
+        foreach (var card in cardsWithFactionEffect)
+        {
+            if (_factions[card.Faction] > 1)
+            {
+                foreach (var effect in card.Ally1Effects)
+                {
+                    if (!effect.IsApplied) PlayEffect(effect);
+                }
+            }
+
+            if (_factions[card.Faction] > 2)
+            {
+                foreach (var effect in card.Allly2Effects)
+                {
+                    if (!effect.IsApplied) PlayEffect(effect);
+                }
+            }
+        }
+    }
+
+    public void PlayEffect(Effect effect)
+    {
+        switch (effect.Type)
+        {
+            case EffectType.Trade:
+                _trade += effect.Value;
+                Trade.UpdateValue(_trade);
+                
+                effect.IsApplied = true;
+                break;
+            case EffectType.Combat:
+                _combat += effect.Value;
+                Combat.UpdateValue(_combat);
+                
+                effect.IsApplied = true;
+                break;
+            case EffectType.Authority:
+                _authority += effect.Value;
+                Authority.UpdateValue(_authority);
+
+                effect.IsApplied = true;
+                break;
+            case EffectType.Draw:
+                switch (TurnManager.instance.Turn)
+                {
+                    case Turn.PlayerTurn:
+                        PlayerController.instance.DrawCard();
+                        effect.IsApplied = true;
+                        break;
+                    case Turn.EnemyTurn:
+                        EnemyController.instance.DrawCard();
+                        effect.IsApplied = true;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case EffectType.DestroyBase:
+                // enemy does not have card with this type of effect
+                // and doesnt process here
+                break;
+            case EffectType.ForceToDiscard:
+                // only enemy have this type of effect
+                PlayerController.instance.DiscardCard();
+                effect.IsApplied = true;
+                break;
+            case EffectType.ScrapFromHand:
+                List<Card> cardsToSelectHand = new List<Card>();
+                cardsToSelectHand.AddRange(PlayerController.instance.Hand);
+
+                ScrapController.instance.Show(cardsToSelectHand, effect.Value, effect);
+                break;
+            case EffectType.ScrapFromDiscardPile:
+                List<Card> cardsToSelectDiscard = new List<Card>();
+                cardsToSelectDiscard.AddRange(PlayerController.instance.DiscardPile);
+
+                ScrapController.instance.Show(cardsToSelectDiscard, effect.Value, effect);
+                break;
+            case EffectType.ScrapFromHandOrDiscardPile:
+                List<Card> cardsToSelectAny = new List<Card>();
+                cardsToSelectAny.AddRange(PlayerController.instance.DiscardPile);
+                cardsToSelectAny.AddRange(PlayerController.instance.Hand);
+
+                ScrapController.instance.Show(cardsToSelectAny, effect.Value, effect);
+                break;
+            case EffectType.ScrapFromTradeRow:
+                List<Card> cardsToSelectTrade = new List<Card>();
+                cardsToSelectTrade.AddRange(CardSystem.instance.TradeRow);
+
+                ScrapController.instance.Show(cardsToSelectTrade, effect.Value, effect);
+                break;
+            default:
+                break;
+        }
+    }
+
+    public bool BuyCard(Card card)
+    {
+        if (_trade < card.Cost) return false;
+
+         _trade-=card.Cost;
         Trade.UpdateValue(_trade);
-        Combat.UpdateValue(_combat);
-        Authority.UpdateValue(_authority);
+        return true;
     }
 
     public void OnDrop(PointerEventData eventData)
