@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class PlayAreaController : MonoBehaviour, IDropHandler
 {
@@ -22,11 +23,14 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
 
     public Transform CardLayout;
 
+    public Button ButtonEndTurn;
+
     private List<Card> _cards;
     private Dictionary<Faction, int> _factions;
 
     private void Start()
     {
+        ButtonEndTurn.onClick.AddListener(EndTurn);
         GameManager.instance.OnGameStart += GameStart;
         _factions = new Dictionary<Faction, int>();
         _factions.Add(Faction.Slugs, 0);
@@ -46,21 +50,72 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
 
     public void EndTurn()
     {
+        // deal damage
+
+        // add authority
+
+
+        switch (TurnManager.instance.Turn)
+        {
+            case Turn.PlayerTurn:
+                _cards.AddRange(PlayerController.instance.Bases.ConvertAll(p => p.Card));
+
+                var enemyOutposts = EnemyController.instance.Bases.FindAll(p => p.Card.Shield.Type == ShieldType.Outpost);
+                foreach (var outpost in enemyOutposts)
+                {
+                    if (outpost.Card.Shield.HP > _combat)
+                    {
+                        _combat = 0;
+                        break;
+                    }
+                    else
+                    {
+                        _combat -= outpost.Card.Shield.HP;
+                        EnemyController.instance.DiscardBase(outpost);
+                    }
+                }
+
+                EnemyController.instance.TakeDamage(_combat);
+                break;
+            case Turn.EnemyTurn:
+                _cards.AddRange(EnemyController.instance.Bases.ConvertAll(p => p.Card));
+
+                var playerOutposts = PlayerController.instance.Bases.FindAll(p => p.Card.Shield.Type == ShieldType.Outpost);
+                foreach (var outpost in playerOutposts)
+                {
+                    if (outpost.Card.Shield.HP > _combat)
+                    {
+                        _combat = 0;
+                        break;
+                    }
+                    else
+                    {
+                        _combat -= outpost.Card.Shield.HP;
+                        PlayerController.instance.DiscardBase(outpost);
+                    }
+                }
+
+                PlayerController.instance.TakeDamage(_combat);
+                break;
+            default:
+                break;
+        }
+
+        Reset();
+    }
+
+    private void Reset()
+    {
         _trade = _combat = _authority = 0;
         Trade.UpdateValue(_trade);
         Combat.UpdateValue(_combat);
         Authority.UpdateValue(_authority);
         _cards.Clear();
 
-        switch (TurnManager.instance.Turn)
+        var cardCs = CardLayout.GetComponentsInChildren<CardController>();
+        for (int i = cardCs.Length - 1; i >= 0; i--)
         {
-            case Turn.PlayerTurn:
-                _cards.AddRange(PlayerController.instance.Bases.ConvertAll(p => p.Card));
-                break;
-            case Turn.EnemyTurn:
-                break;
-            default:
-                break;
+            Destroy(cardCs[i].gameObject);
         }
     }
 
@@ -111,13 +166,13 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
             case EffectType.Trade:
                 _trade += effect.Value;
                 Trade.UpdateValue(_trade);
-                
+
                 effect.IsApplied = true;
                 break;
             case EffectType.Combat:
                 _combat += effect.Value;
                 Combat.UpdateValue(_combat);
-                
+
                 effect.IsApplied = true;
                 break;
             case EffectType.Authority:
@@ -147,7 +202,7 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
                 break;
             case EffectType.ForceToDiscard:
                 // only enemy have this type of effect
-                PlayerController.instance.DiscardCard();
+                PlayerController.instance.DiscardOnStart();
                 effect.IsApplied = true;
                 break;
             case EffectType.ScrapFromHand:
@@ -184,7 +239,7 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
     {
         if (_trade < card.Cost) return false;
 
-         _trade-=card.Cost;
+        _trade -= card.Cost;
         Trade.UpdateValue(_trade);
         return true;
     }

@@ -13,8 +13,8 @@ public class ScrapController : MonoBehaviour
     {
         instance = this;
         _dropController = GetComponentInChildren<DropController>();
-        Ok.onClick.AddListener(OkOnClick);
-        Cancel.onClick.AddListener(CancelOnClick);
+        OkButton.onClick.AddListener(OkOnClick);
+        Canceuttonl.onClick.AddListener(CancelOnClick);
         _dropController.OnScrapDrop += OnDrop;
     }
 
@@ -30,8 +30,8 @@ public class ScrapController : MonoBehaviour
     public Transform AllCardLayout;
     public Transform SelectedCardLayout;
     public CardController CardPrefab;
-    public Button Ok;
-    public Button Cancel;
+    public Button OkButton;
+    public Button Canceuttonl;
 
     private Effect _effectReference;
     public void Show(List<Card> cardsToChoose, int amount, Effect effectRef)
@@ -51,12 +51,9 @@ public class ScrapController : MonoBehaviour
     {
         var cardsToScrap = SelectedCardLayout.GetComponentsInChildren<CardController>();
 
-        if (cardsToScrap.Length > 0)
+        foreach (var card in cardsToScrap)
         {
-            foreach (var card in cardsToScrap)
-            {
-                card.Scrap();
-            }
+            card.Scrap();
         }
 
         _effectReference.IsApplied = true;

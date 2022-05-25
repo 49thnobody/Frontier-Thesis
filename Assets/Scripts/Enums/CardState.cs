@@ -7,5 +7,5 @@
     Basement,
     EnemyBuy,
     ScrapPanel,
-    ScrapPanelChoosen
+    DiscardPanel
 }

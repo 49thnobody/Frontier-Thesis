@@ -13,6 +13,8 @@ public class EnemyController : MonoBehaviour
     public Transform BaseLayout;
     public List<CardController> Bases;
 
+    public OutputController Authority;
+
     public void DrawCard()
     {
 
@@ -21,5 +23,17 @@ public class EnemyController : MonoBehaviour
     public void PlaceBase(CardController card)
     {
 
+    }
+
+    public void DiscardBase(CardController basement)
+    {
+
+    }
+
+    public void TakeDamage(int damage)
+    {
+        Authority.UpdateValue(Authority.Value - damage);
+        if (Authority.Value <= 0)
+            ;//lose
     }
 }

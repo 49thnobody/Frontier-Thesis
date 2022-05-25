@@ -2,5 +2,6 @@
 {
     ScrapHeap,
     EnemyAuthority,
-    ScrapPanel
+    ScrapPanel,
+    DiscardPanel
 }

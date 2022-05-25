@@ -10,7 +10,8 @@ public class PlayerController : MonoBehaviour
     public Transform HandLayout;
     public CardController CardPrefab;
     private List<CardController> _hand;
-    public List<Card> Hand => _hand.ConvertAll(p => p.Card);
+    private List<Card> _handCards;
+    public List<Card> Hand => _handCards;
 
     public Transform BaseLayout;
     public List<CardController> Bases;
@@ -24,6 +25,7 @@ public class PlayerController : MonoBehaviour
         instance = this;
         _discardPile = new List<Card>();
         _hand = new List<CardController>();
+        _handCards = new List<CardController>();
         _deck = new List<Card>();
         Bases = new List<CardController>();
     }
@@ -35,6 +37,13 @@ public class PlayerController : MonoBehaviour
         GameManager.instance.OnTestDraw += TestDraw;
 
         CardSystem.instance.OnScrap += OnScrap;
+    }
+
+    public void TakeDamage(int damage)
+    {
+        Authority.UpdateValue(Authority.Value - damage);
+        if (Authority.Value <= 0)
+            ;//lose
     }
 
     private void OnScrap(Card card)
@@ -76,6 +85,28 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public void StartTurn()
+    {
+        // discard cards
+    }
+
+    public void EndTurn()
+    {
+        _discardPile.AddRange(_handCards);
+        _handCards.Clear();
+
+        for (int i = _hand.Count - 1; i >= 0; i--)
+        {
+            Destroy(_hand[i].gameObject);
+            _hand.RemoveAt(i);
+        }
+
+        for (int i = 0; i < 5; i++)
+        {
+            DrawCard();
+        }
+    }
+
     private void Reset()
     {
         Authority.UpdateValue(50);
@@ -102,13 +133,36 @@ public class PlayerController : MonoBehaviour
 
         CardController card = Instantiate(CardPrefab, HandLayout);
         card.Set(_deck[_deck.Count - 1]);
+        _handCards.Add(_deck[_deck.Count - 1]);
         _hand.Add(card);
         _deck.RemoveAt(_deck.Count - 1);
     }
 
-    public void DiscardCard()
+    private int _discardCount;
+    public void DiscardOnStart()
     {
+        _discardCount++;
+    }
 
+    public void Discard(List<Card> cards)
+    {
+        foreach (var card in cards)
+        {
+            var cardC = _hand.Find(p => p.Card == card);
+            if (cardC != null)
+            {
+                _hand.Remove(cardC);
+                Destroy(cardC.gameObject);
+            }
+            _handCards.Remove(card);
+            _discardPile.Add(card);
+        }
+    }
+
+    public void DiscardBase(CardController basement)
+    {
+        Bases.Remove(basement);
+        Destroy(basement.gameObject);
     }
 
     public void OnBuy(Card card)

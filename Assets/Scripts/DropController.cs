@@ -6,6 +6,9 @@ public class DropController : MonoBehaviour, IDropHandler
     public delegate void ScrapPanelDrop(CardController card);
     public event ScrapPanelDrop OnScrapDrop;
 
+    public delegate void DiscardPanelDrop(CardController card);
+    public event DiscardPanelDrop OnDiscardDrop;
+
     public DropPlaceType Type;
     public void OnDrop(PointerEventData eventData)
     {
@@ -24,7 +27,9 @@ public class DropController : MonoBehaviour, IDropHandler
                 card.Scrap();
             }
 
+            // hate this part
             if (Type == DropPlaceType.ScrapPanel) OnScrapDrop?.Invoke(card);
+            if (Type == DropPlaceType.DiscardPanel) OnDiscardDrop?.Invoke(card);
         }
 
         if (resource)

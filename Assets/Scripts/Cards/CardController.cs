@@ -43,7 +43,7 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
             case CardState.Hand:
             case CardState.PlayArea:
             case CardState.ScrapPanel:
-            case CardState.ScrapPanelChoosen:
+            case CardState.DiscardPanel:
                 transform.Rotate(new Vector3(0, 0, 0));
                 break;
             default:
