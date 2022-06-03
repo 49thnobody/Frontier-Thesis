@@ -12,7 +12,7 @@ public class ScrapController : MonoBehaviour
     private void Awake()
     {
         instance = this;
-        _dropController = GetComponentInChildren<DropController>();
+        _dropController = GetComponentInChildren<DropController>(true);
         OkButton.onClick.AddListener(OkOnClick);
         Canceuttonl.onClick.AddListener(CancelOnClick);
         _dropController.OnScrapDrop += OnDrop;

@@ -2,16 +2,15 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-//public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
 {
     #region Card Info
     // card
-    public Card Card { get; private set; }
+    public Card Card;
     public CardState State { get; private set; }
 
     // cash for quick coding
-    public bool IsBase => Card.Shield != null;
+    public bool IsBase => Card == null ? false : Card.Shield != null;
     public bool HaveAlly1Effect => Card.Effects.FindAll(p => p.Group == EffectGroup.Ally1).Count > 0;
     public bool HaveAlly2Effect => Card.Effects.FindAll(p => p.Group == EffectGroup.Ally2).Count > 0;
     public bool HaveScrapEffect => Card.Effects.FindAll(p => p.Group == EffectGroup.Scrap).Count > 0;
@@ -116,15 +115,6 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
             }
             if (resource.Type == ResourceType.Combat && IsBase)
                 ; // TODO - damage check and destroy base
-        }
-
-        if (card)
-        {
-            Effect effect = Card.Effects.Find(p => p.Type == EffectType.DestroyBase);
-            if (effect == null || !IsBase || State != CardState.Basement) return;
-
-            EnemyController.instance.Bases.Remove(this);
-            Destroy(gameObject);
         }
     }
     #endregion

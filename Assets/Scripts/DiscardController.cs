@@ -14,7 +14,7 @@ public class DiscardController : MonoBehaviour
     {
         instance = this;
         OkButton.onClick.AddListener(OkOnClick);
-        _dropController = GetComponentInChildren<DropController>();
+        _dropController = GetComponentInChildren<DropController>(true);
         _dropController.OnDiscardDrop += OnDrop;
     }
 

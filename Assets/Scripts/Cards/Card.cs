@@ -1,13 +1,14 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+[Serializable]
 public class Card
 {
     public string Name;
     public int Cost;
     public Faction Faction;
     public List<Effect> Effects;
-    public bool IsChoiceRequired;
     public Shield Shield;
     public Sprite Sprite;
 
@@ -20,7 +21,7 @@ public class Card
 
     public Card(string name, int cost,
                 Faction fraction,
-                List<Effect> effects, bool isChoiceRequired = false,
+                List<Effect> effects,
                 Shield shield = null)
     {
         Name = name;
@@ -29,7 +30,6 @@ public class Card
         Effects = effects;
         Shield = shield;
         Effects = effects;
-        IsChoiceRequired = isChoiceRequired;
         Sprite = Resources.Load<Sprite>($"Cards/{Name}");
     }
 }

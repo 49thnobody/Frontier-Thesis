@@ -14,19 +14,21 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
         _cards = new List<Card>();
     }
 
-    public OutputController Trade;
+    [SerializeField] private OutputController Trade;
     private int _trade;
-    public OutputController Combat;
+    [SerializeField] private OutputController Combat;
     private int _combat;
-    public OutputController Authority;
+    [SerializeField] private OutputController Authority;
     private int _authority;
 
-    public Transform CardLayout;
+    [SerializeField] private Transform CardLayout;
 
-    public Button ButtonEndTurn;
+    [SerializeField] private Button ButtonEndTurn;
 
     private List<Card> _cards;
     private Dictionary<Faction, int> _factions;
+
+    private Turn _turn;
 
     private void Start()
     {
@@ -41,6 +43,7 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
 
     public void GameStart()
     {
+        _turn = Turn.PlayerTurn;
         _cards.Clear();
         _trade = _combat = _authority = 0;
         Trade.UpdateValue(_trade);
@@ -50,12 +53,7 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
 
     public void EndTurn()
     {
-        // deal damage
-
-        // add authority
-
-
-        switch (TurnManager.instance.Turn)
+        switch (_turn)
         {
             case Turn.PlayerTurn:
                 _cards.AddRange(PlayerController.instance.Bases.ConvertAll(p => p.Card));
@@ -76,6 +74,8 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
                 }
 
                 EnemyController.instance.TakeDamage(_combat);
+                PlayerController.instance.EndTurn();
+                EnemyController.instance.OnMyTurn();
                 break;
             case Turn.EnemyTurn:
                 _cards.AddRange(EnemyController.instance.Bases.ConvertAll(p => p.Card));
@@ -182,7 +182,7 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
                 effect.IsApplied = true;
                 break;
             case EffectType.Draw:
-                switch (TurnManager.instance.Turn)
+                switch (_turn)
                 {
                     case Turn.PlayerTurn:
                         PlayerController.instance.DrawCard();
@@ -196,9 +196,9 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
                         break;
                 }
                 break;
-            case EffectType.DestroyBase:
-                // enemy does not have card with this type of effect
-                // and doesnt process here
+            case EffectType.Discard:
+                // only enemy have have this
+                EnemyController.instance.DiscardCard();
                 break;
             case EffectType.ForceToDiscard:
                 // only enemy have this type of effect
@@ -244,6 +244,11 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
         return true;
     }
 
+    public void PlaceEnemyCard(Card card)
+    {
+
+    }
+
     public void OnDrop(PointerEventData eventData)
     {
         CardController card = eventData.pointerDrag.GetComponent<CardController>();
@@ -251,23 +256,22 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
         if (!card) return;
 
         if (card.IsBase)
-            PlayerController.instance.PlaceBase(card);
+        {
+            switch (_turn)
+            {
+                case Turn.PlayerTurn:
+                    PlayerController.instance.PlaceBase(card);
+                    break;
+                case Turn.EnemyTurn:
+                    EnemyController.instance.PlaceBase(card);
+                    break;
+                default:
+                    break;
+            }
+        }
         else
             card.Parent = CardLayout;
 
-        if (card.Card.IsChoiceRequired)
-        {
-            // show options to choose
-            // TODO
-        }
-        else if (card.Card.Effects.FindAll(p => p.Type == EffectType.DestroyBase).Count > 0)
-        {
-            card.SetActive(true);
-            PlayCard(card.Card);
-        }
-        else
-        {
-            PlayCard(card.Card);
-        }
+        PlayCard(card.Card);
     }
 }

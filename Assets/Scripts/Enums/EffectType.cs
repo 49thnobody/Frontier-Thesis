@@ -4,14 +4,10 @@ public enum EffectType
     Combat,
     Authority,
     Draw,
-    DestroyBase,
+    Discard,
     ForceToDiscard,
     ScrapFromHand,
     ScrapFromDiscardPile,
     ScrapFromHandOrDiscardPile,
     ScrapFromTradeRow,
-    ScrapXFromTradeRowAndGetCambatFromPrice,
-    ScrapXFromHandAndGetXDamage,
-    DiscardXCardAndGetXYCombat,
-
 }

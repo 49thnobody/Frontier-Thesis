@@ -1,24 +1,27 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
     public static PlayerController instance;
 
-    public OutputController Authority;
+    [SerializeField] private OutputController Authority;
 
-    public Transform HandLayout;
-    public CardController CardPrefab;
+    [SerializeField] private Transform HandLayout;
+    [SerializeField] private CardController CardPrefab;
     private List<CardController> _hand;
     private List<Card> _handCards;
     public List<Card> Hand => _handCards;
 
-    public Transform BaseLayout;
+    [SerializeField] private Transform BaseLayout;
     public List<CardController> Bases;
 
     private List<Card> _deck;
     private List<Card> _discardPile;
     public List<Card> DiscardPile => _discardPile;
+
+    [SerializeField] private GameObject DiscardPileGO;
 
     private void Awake()
     {
@@ -33,8 +36,6 @@ public class PlayerController : MonoBehaviour
     private void Start()
     {
         GameManager.instance.OnGameStart += GameStart;
-
-        GameManager.instance.OnTestDraw += TestDraw;
 
         CardSystem.instance.OnScrap += OnScrap;
     }
@@ -58,26 +59,11 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void TestDraw()
-    {
-        Reset();
-
-        for (int i = 0; i < 10; i++)
-        {
-            _deck.Add(new Card("Burrower", 3, Faction.Slugs,
-                new List<Effect>() { new Effect(EffectGroup.Priamry, EffectType.Draw, 1) }));
-        }
-
-        for (int i = 0; i < 5; i++)
-        {
-            DrawCard();
-        }
-    }
-
     public void GameStart()
     {
         Reset();
         _deck.AddRange(CardSystem.instance.StartingDeck);
+        Shuffle();
 
         for (int i = 0; i < 5; i++)
         {
@@ -85,13 +71,9 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    public void StartTurn()
-    {
-        // discard cards
-    }
-
     public void EndTurn()
     {
+        _discardCount = 0;
         _discardPile.AddRange(_handCards);
         _handCards.Clear();
 
@@ -100,6 +82,7 @@ public class PlayerController : MonoBehaviour
             Destroy(_hand[i].gameObject);
             _hand.RemoveAt(i);
         }
+        UpdateDiscardImage();
 
         for (int i = 0; i < 5; i++)
         {
@@ -116,6 +99,7 @@ public class PlayerController : MonoBehaviour
             Destroy(_hand[i].gameObject);
             _hand.RemoveAt(i);
         }
+        _handCards.Clear();
 
         for (int i = Bases.Count - 1; i >= 0; i--)
         {
@@ -124,6 +108,8 @@ public class PlayerController : MonoBehaviour
         }
 
         _deck.Clear();
+        _discardPile.Clear();
+        UpdateDiscardImage();
     }
 
     public void DrawCard()
@@ -133,6 +119,7 @@ public class PlayerController : MonoBehaviour
 
         CardController card = Instantiate(CardPrefab, HandLayout);
         card.Set(_deck[_deck.Count - 1]);
+        card.SetState(CardState.Hand);
         _handCards.Add(_deck[_deck.Count - 1]);
         _hand.Add(card);
         _deck.RemoveAt(_deck.Count - 1);
@@ -168,7 +155,19 @@ public class PlayerController : MonoBehaviour
     public void OnBuy(Card card)
     {
         _discardPile.Add(card);
-        // update ui
+        UpdateDiscardImage();
+    }
+
+    private void UpdateDiscardImage()
+    {
+        var image = DiscardPileGO.GetComponent<Image>();
+        if (_discardPile.Count == 0)
+            image.enabled = false;
+        else
+        {
+            image.enabled = true;
+            image.sprite = _discardPile[_discardPile.Count - 1].Sprite;
+        }
     }
 
     private void Shuffle()
@@ -176,20 +175,11 @@ public class PlayerController : MonoBehaviour
         var allCards = new List<Card>();
         allCards.AddRange(_deck);
         allCards.AddRange(_discardPile);
-        _deck.Clear();
         _discardPile.Clear();
-
-        int cardCount = allCards.Count;
-
-        while (_deck.Count < cardCount)
-        {
-            int currentIndex = Random.Range(0, allCards.Count);
-
-            _deck.Add(allCards[currentIndex]);
-            allCards.RemoveAt(currentIndex);
-        }
-
-        _deck = allCards;
+        UpdateDiscardImage();
+        _deck.Clear();
+        _deck.AddRange(allCards);
+        CardSystem.instance.Shuffle(ref _deck);
     }
 
     public void PlaceBase(CardController card)
