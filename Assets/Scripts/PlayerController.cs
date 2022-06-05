@@ -24,6 +24,9 @@ public class PlayerController : MonoBehaviour
     public List<Card> DiscardPile => _discardPile;
 
     [SerializeField] private Transform _discardPileTransform;
+    private CardController _discardLastCard;
+
+    [SerializeField] private Button _playAllCards;
 
     private void Awake()
     {
@@ -33,6 +36,8 @@ public class PlayerController : MonoBehaviour
         _handCards = new List<Card>();
         _deck = new List<Card>();
         Bases = new List<CardController>();
+
+        _playAllCards.onClick.AddListener(PlayAllCards);
     }
 
     private void Start()
@@ -40,6 +45,14 @@ public class PlayerController : MonoBehaviour
         GameManager.instance.OnGameStart += GameStart;
 
         CardSystem.instance.OnScrap += OnScrap;
+    }
+
+    private void PlayAllCards()
+    {
+        foreach (var cardC in _hand)
+        {
+            PlayAreaController.instance.PlayCard(cardC);
+        }
     }
 
     public void TakeDamage(int damage)
@@ -63,6 +76,8 @@ public class PlayerController : MonoBehaviour
 
     public void GameStart()
     {
+        _discardLastCard = Instantiate(CardPrefab, _discardPileTransform);
+        UpdateDiscardImage();
         Reset();
         _deck.AddRange(CardSystem.instance.StartingDeck);
         Shuffle();
@@ -172,13 +187,8 @@ public class PlayerController : MonoBehaviour
             return;
         }
         _discardPileTransform.gameObject.SetActive(true);
-        foreach (var child in _discardPileTransform.GetComponentsInChildren<CardController>())
-        {
-            Destroy(child.gameObject);
-        }
-        var discardlastCard = Instantiate(CardPrefab, _discardPileTransform);
-        discardlastCard.Set(_discardPile[_discardPile.Count - 1]);
-        discardlastCard.SetState(CardState.DiscardPile);
+        _discardLastCard.Set(_discardPile[_discardPile.Count - 1]);
+        _discardLastCard.SetState(CardState.DiscardPile);
     }
 
     private void Shuffle()

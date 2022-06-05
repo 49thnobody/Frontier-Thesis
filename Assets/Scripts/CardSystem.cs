@@ -16,8 +16,10 @@ public class CardSystem : MonoBehaviour
     public List<Card> EmperorsElitesTradeDeck;
     public List<Card> EmperorsSubjectsTradeDeck;
 
-    [SerializeField] private Transform ElitesDeckNextBuy;
-    [SerializeField] private Transform SubjectsDeckNextBuy;
+    [SerializeField] private Transform _elitesDeckNextBuy;
+    private CardController _eliteLastCard;
+    [SerializeField] private Transform _subjectsDeckNextBuy;
+    private CardController _subjectLastCard;
     private void Awake()
     {
         instance = this;
@@ -404,12 +406,12 @@ public class CardSystem : MonoBehaviour
     {
         InitTradeRow();
 
-        var eliteNextBuy = Instantiate(CardPrefab, ElitesDeckNextBuy);
-        eliteNextBuy.Set(EmperorsElitesTradeDeck[EmperorsElitesTradeDeck.Count - 1]);
-        eliteNextBuy.SetState(CardState.EnemyBuy);
-        var subjectiveNextBuy = Instantiate(CardPrefab, SubjectsDeckNextBuy);
-        subjectiveNextBuy.Set(EmperorsSubjectsTradeDeck[EmperorsSubjectsTradeDeck.Count - 1]);
-        subjectiveNextBuy.SetState(CardState.EnemyBuy);
+        _eliteLastCard = Instantiate(CardPrefab, _elitesDeckNextBuy);
+        _eliteLastCard.Set(EmperorsElitesTradeDeck[EmperorsElitesTradeDeck.Count - 1]);
+        _eliteLastCard.SetState(CardState.EnemyBuy);
+        _subjectLastCard = Instantiate(CardPrefab, _subjectsDeckNextBuy);
+        _subjectLastCard.Set(EmperorsSubjectsTradeDeck[EmperorsSubjectsTradeDeck.Count - 1]);
+        _subjectLastCard.SetState(CardState.EnemyBuy);
 
     }
 
@@ -432,6 +434,14 @@ public class CardSystem : MonoBehaviour
             _tradeRow.Add(newCard);
             Draw(i);
         }
+
+        _eliteLastCard = Instantiate(CardPrefab, _elitesDeckNextBuy);
+        _eliteLastCard.Set(EmperorsElitesTradeDeck[EmperorsElitesTradeDeck.Count - 1]);
+        _eliteLastCard.SetState(CardState.EnemyBuy);
+
+        _subjectLastCard = Instantiate(CardPrefab, _subjectsDeckNextBuy);
+        _subjectLastCard.Set(EmperorsSubjectsTradeDeck[EmperorsSubjectsTradeDeck.Count - 1]);
+        _subjectLastCard.SetState(CardState.EnemyBuy);
     }
 
     public delegate void Scrap(Card card);
@@ -489,10 +499,14 @@ public class CardSystem : MonoBehaviour
         if (mostExpansive == elite)
         {
             EmperorsElitesTradeDeck.Remove(elite);
+            _eliteLastCard.Set(EmperorsElitesTradeDeck[EmperorsElitesTradeDeck.Count - 1]);
+            _eliteLastCard.SetState(CardState.EnemyBuy);
         }
         if (mostExpansive == subject)
         {
-            EmperorsElitesTradeDeck.Remove(elite);
+            EmperorsSubjectsTradeDeck.Remove(subject);
+            _subjectLastCard.Set(EmperorsSubjectsTradeDeck[EmperorsSubjectsTradeDeck.Count - 1]);
+            _subjectLastCard.SetState(CardState.EnemyBuy);
         }
 
         trade -= mostExpansive.Cost;

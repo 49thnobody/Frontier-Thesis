@@ -17,7 +17,6 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
     #endregion
 
     public Image Image;
-    public Image ActiveFrame;
 
     public void Set(Card card)
     {
@@ -34,17 +33,17 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
             case CardState.EnemyBuy:
                 gameObject.GetComponent<RectTransform>().localScale = new Vector3(0.5f, 0.5f, 1f);
                 if (IsBase)
-                    transform.Rotate(new Vector3(0, 0, -90));
+                    transform.eulerAngles = new Vector3(0, 0, -90);
                 else
-                    transform.Rotate(new Vector3(0, 0, 90));
+                    transform.eulerAngles = new Vector3(0, 0, 90);
                 break;
             case CardState.Basement:
             case CardState.TradeRow:
                 gameObject.GetComponent<RectTransform>().localScale = new Vector3(1f, 1f, 1f);
                 if (IsBase)
-                    transform.Rotate(new Vector3(0, 0, -90));
+                    transform.eulerAngles = new Vector3(0, 0, -90);
                 else
-                    transform.Rotate(new Vector3(0, 0, 90));
+                    transform.eulerAngles = new Vector3(0, 0, 90);
                 break;
             case CardState.Hand:
             case CardState.PlayArea:
@@ -58,18 +57,15 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         }
     }
 
-    public void SetActive(bool active)
-    {
-        if (active)
-            ActiveFrame.enabled = true;
-        else
-            ActiveFrame.enabled = false;
-    }
-
     public void Scrap()
     {
         CardSystem.instance.ToScrap(Card);
         Destroy(gameObject);
+    }
+
+    public void Place(Transform parent)
+    {
+        transform.SetParent(parent);
     }
 
     #region Dragging
@@ -86,6 +82,11 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        if(State!=CardState.Hand)
+        {
+            eventData.pointerDrag = null;
+            return;
+        }
         _offset = transform.position - _mainCamera.ScreenToWorldPoint(eventData.position);
         Parent = transform.parent;
         transform.SetParent(Parent.parent);

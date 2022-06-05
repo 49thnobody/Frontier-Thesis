@@ -157,7 +157,7 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
         var card = cardC.Card;
 
         if (!cardC.IsBase)
-            cardC.Parent = CardLayout;
+            cardC.Place(CardLayout);
 
         else if (!card.Shield.IsPlaced)
         {
@@ -309,6 +309,7 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
         PlayCard(card);
     }
 
+    #region Dropping
     public void OnDrop(PointerEventData eventData)
     {
         CardController card = eventData.pointerDrag.GetComponent<CardController>();
@@ -317,4 +318,5 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
 
         PlayCard(card);
     }
+    #endregion
 }
