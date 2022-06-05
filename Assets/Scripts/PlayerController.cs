@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,11 +18,12 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Transform BaseLayout;
     public List<CardController> Bases;
 
+    [SerializeField] private TextMeshProUGUI _deckCardCount;
     private List<Card> _deck;
     private List<Card> _discardPile;
     public List<Card> DiscardPile => _discardPile;
 
-    [SerializeField] private GameObject DiscardPileGO;
+    [SerializeField] private Transform _discardPileTransform;
 
     private void Awake()
     {
@@ -123,6 +125,7 @@ public class PlayerController : MonoBehaviour
         _handCards.Add(_deck[_deck.Count - 1]);
         _hand.Add(card);
         _deck.RemoveAt(_deck.Count - 1);
+        _deckCardCount.text = _deck.Count.ToString();
     }
 
     private int _discardCount;
@@ -148,6 +151,9 @@ public class PlayerController : MonoBehaviour
 
     public void DiscardBase(CardController basement)
     {
+        basement.Card.Shield.IsPlaced = false;
+        _discardPile.Add(basement.Card);
+        UpdateDiscardImage();
         Bases.Remove(basement);
         Destroy(basement.gameObject);
     }
@@ -160,14 +166,19 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateDiscardImage()
     {
-        var image = DiscardPileGO.GetComponent<Image>();
         if (_discardPile.Count == 0)
-            image.enabled = false;
-        else
         {
-            image.enabled = true;
-            image.sprite = _discardPile[_discardPile.Count - 1].Sprite;
+            _discardPileTransform.gameObject.SetActive(false);
+            return;
         }
+        _discardPileTransform.gameObject.SetActive(true);
+        foreach (var child in _discardPileTransform.GetComponentsInChildren<CardController>())
+        {
+            Destroy(child.gameObject);
+        }
+        var discardlastCard = Instantiate(CardPrefab, _discardPileTransform);
+        discardlastCard.Set(_discardPile[_discardPile.Count - 1]);
+        discardlastCard.SetState(CardState.DiscardPile);
     }
 
     private void Shuffle()

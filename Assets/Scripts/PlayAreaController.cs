@@ -22,6 +22,7 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
     private int _authority;
 
     [SerializeField] private Transform CardLayout;
+    [SerializeField] private CardController CardPrefab;
 
     [SerializeField] private Button ButtonEndTurn;
 
@@ -32,7 +33,7 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
 
     private void Start()
     {
-        ButtonEndTurn.onClick.AddListener(EndTurn);
+        ButtonEndTurn.onClick.AddListener(OnEndTurn);
         GameManager.instance.OnGameStart += GameStart;
         _factions = new Dictionary<Faction, int>();
         _factions.Add(Faction.Slugs, 0);
@@ -44,20 +45,41 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
     public void GameStart()
     {
         _turn = Turn.PlayerTurn;
-        _cards.Clear();
-        _trade = _combat = _authority = 0;
-        Trade.UpdateValue(_trade);
-        Combat.UpdateValue(_combat);
-        Authority.UpdateValue(_authority);
+        Reset();
     }
 
-    public void EndTurn()
+    private void OnStartTurn()
     {
         switch (_turn)
         {
             case Turn.PlayerTurn:
-                _cards.AddRange(PlayerController.instance.Bases.ConvertAll(p => p.Card));
+                var basesP = PlayerController.instance.Bases.ConvertAll(p => p.Card);
 
+                foreach (var @base in basesP)
+                {
+                    PlayCard(@base);
+                }
+                break;
+            case Turn.EnemyTurn:
+                var basesE = EnemyController.instance.Bases.ConvertAll(p => p.Card);
+
+                foreach (var @base in basesE)
+                {
+                    PlayCard(@base);
+                }
+
+                EnemyController.instance.StartTurn();
+                break;
+            default:
+                break;
+        }
+    }
+
+    public void OnEndTurn()
+    {
+        switch (_turn)
+        {
+            case Turn.PlayerTurn:
                 var enemyOutposts = EnemyController.instance.Bases.FindAll(p => p.Card.Shield.Type == ShieldType.Outpost);
                 foreach (var outpost in enemyOutposts)
                 {
@@ -75,11 +97,12 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
 
                 EnemyController.instance.TakeDamage(_combat);
                 PlayerController.instance.EndTurn();
-                EnemyController.instance.OnMyTurn();
+                _turn = Turn.EnemyTurn;
+                ButtonEndTurn.enabled = false;
+                Reset();
+                OnStartTurn();
                 break;
             case Turn.EnemyTurn:
-                _cards.AddRange(EnemyController.instance.Bases.ConvertAll(p => p.Card));
-
                 var playerOutposts = PlayerController.instance.Bases.FindAll(p => p.Card.Shield.Type == ShieldType.Outpost);
                 foreach (var outpost in playerOutposts)
                 {
@@ -96,12 +119,22 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
                 }
 
                 PlayerController.instance.TakeDamage(_combat);
+                _turn = Turn.PlayerTurn;
+                ButtonEndTurn.enabled = true;
+                Reset();
+                OnStartTurn();
                 break;
             default:
                 break;
         }
+    }
 
-        Reset();
+    public void EnemyBuy()
+    {
+        do
+        {
+            CardSystem.instance.BuyMostExpansive(ref _trade);
+        } while (_trade > 0);
     }
 
     private void Reset()
@@ -119,10 +152,34 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
         }
     }
 
+    public void PlayCard(CardController cardC)
+    {
+        var card = cardC.Card;
+
+        if (!cardC.IsBase)
+            cardC.Parent = CardLayout;
+
+        else if (!card.Shield.IsPlaced)
+        {
+            switch (_turn)
+            {
+                case Turn.PlayerTurn:
+                    PlayerController.instance.PlaceBase(cardC);
+                    break;
+                case Turn.EnemyTurn:
+                    EnemyController.instance.PlaceBase(cardC);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        PlayCard(card);
+    }
+
     public void PlayCard(Card card)
     {
         _cards.Add(card);
-
         foreach (var effect in card.PrimaryEffects)
         {
             PlayEffect(effect);
@@ -246,7 +303,10 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
 
     public void PlaceEnemyCard(Card card)
     {
-
+        var newCard = Instantiate(CardPrefab, CardLayout);
+        newCard.Set(card);
+        newCard.SetState(CardState.PlayArea);
+        PlayCard(card);
     }
 
     public void OnDrop(PointerEventData eventData)
@@ -255,23 +315,6 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
 
         if (!card) return;
 
-        if (card.IsBase)
-        {
-            switch (_turn)
-            {
-                case Turn.PlayerTurn:
-                    PlayerController.instance.PlaceBase(card);
-                    break;
-                case Turn.EnemyTurn:
-                    EnemyController.instance.PlaceBase(card);
-                    break;
-                default:
-                    break;
-            }
-        }
-        else
-            card.Parent = CardLayout;
-
-        PlayCard(card.Card);
+        PlayCard(card);
     }
 }

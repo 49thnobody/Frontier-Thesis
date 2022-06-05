@@ -1,11 +1,11 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class EnemyController : MonoBehaviour
 {
     public static EnemyController instance;
-
 
     public Transform BaseLayout;
     public List<CardController> Bases;
@@ -17,7 +17,6 @@ public class EnemyController : MonoBehaviour
 
     private List<Card> _deck;
     private List<Card> _discardPile;
-    public List<Card> DiscardPile => _discardPile;
 
     private void Awake()
     {
@@ -33,7 +32,7 @@ public class EnemyController : MonoBehaviour
         GameManager.instance.OnGameStart += GameStart;
     }
 
-    public void EndTurn()
+    private void EndTurn()
     {
         _discardPile.AddRange(_handCards);
         _handCards.Clear();
@@ -42,6 +41,8 @@ public class EnemyController : MonoBehaviour
         {
             DrawCard();
         }
+
+        PlayAreaController.instance.OnEndTurn();  
     }
 
     public void DrawCard()
@@ -70,6 +71,8 @@ public class EnemyController : MonoBehaviour
 
     public void DiscardBase(CardController basement)
     {
+        basement.Card.Shield.IsPlaced = false;
+        _discardPile.Add(basement.Card);
         Bases.Remove(basement);
         Destroy(basement.gameObject);
     }
@@ -91,15 +94,28 @@ public class EnemyController : MonoBehaviour
         CardSystem.instance.Shuffle(ref _deck);
     }
 
-    public void OnMyTurn()
+    public void StartTurn()
+    {
+        StartCoroutine(OnMyTurn());
+    }
+
+    public IEnumerator OnMyTurn()
     {
         while (_handCards.Count>0)
         {
             PlayAreaController.instance.PlaceEnemyCard(_handCards[_handCards.Count - 1]);
             Discard(_handCards[_handCards.Count - 1]);
+            yield return new WaitForSeconds(1);
         }
 
-        PlayAreaController.instance.EndTurn();
+        PlayAreaController.instance.EnemyBuy();
+
+        EndTurn();
+    }
+
+    public void OnBuy(Card card)
+    {
+        _discardPile.Add(card);
     }
 
     public void GameStart()
@@ -115,7 +131,7 @@ public class EnemyController : MonoBehaviour
 
     private void Reset()
     {
-        Authority.UpdateValue(50);
+        Authority.UpdateValue(40);
 
         _handCards.Clear();
         _discardPile.Clear();

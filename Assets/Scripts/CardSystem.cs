@@ -1,10 +1,23 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CardSystem : MonoBehaviour
 {
     public static CardSystem instance;
 
+    public CardController CardPrefab;
+
+    public List<Card> StartingDeck;
+    private List<Card> _tradeDeck;
+    public Transform TradeRowLayout;
+    private List<CardController> _tradeRow;
+    public List<Card> TradeRow => _tradeRow.ConvertAll(p => p.Card);
+    public List<Card> EmperorsElitesTradeDeck;
+    public List<Card> EmperorsSubjectsTradeDeck;
+
+    [SerializeField] private Transform ElitesDeckNextBuy;
+    [SerializeField] private Transform SubjectsDeckNextBuy;
     private void Awake()
     {
         instance = this;
@@ -190,7 +203,7 @@ public class CardSystem : MonoBehaviour
                new List<Effect>() {
                     new Effect(EffectGroup.Priamry, EffectType.ScrapFromDiscardPile, 1),
                     new Effect(EffectGroup.Scrap, EffectType.Combat, 7),
-               }));
+               }, new Shield(ShieldType.Outpost, 6)));
             #endregion
 
             #region TradeFederation
@@ -282,24 +295,24 @@ public class CardSystem : MonoBehaviour
             #endregion
 
             #region StarEmpire
-            EmperorsEliteTradeDeck = new List<Card>();
-            EmperorsEliteTradeDeck.Add(new Card("ImperialFlagship", 8, Faction.StarEmpire,
+            EmperorsElitesTradeDeck = new List<Card>();
+            EmperorsElitesTradeDeck.Add(new Card("ImperialFlagship", 8, Faction.StarEmpire,
                new List<Effect>() {
                     new Effect(EffectGroup.Priamry, EffectType.Combat, 7),
                     new Effect(EffectGroup.Priamry, EffectType.Draw, 2),
                     new Effect(EffectGroup.Ally1, EffectType.ForceToDiscard, 1),
                }));
-            EmperorsEliteTradeDeck.Add(new Card("SiegeFortress", 7, Faction.StarEmpire,
+            EmperorsElitesTradeDeck.Add(new Card("SiegeFortress", 7, Faction.StarEmpire,
                new List<Effect>() {
                     new Effect(EffectGroup.Priamry, EffectType.Combat, 5),
                     new Effect(EffectGroup.Ally1, EffectType.Combat, 4),
                }, new Shield(ShieldType.Outpost, 5)));
-            EmperorsEliteTradeDeck.Add(new Card("JammingTerminal", 5, Faction.StarEmpire,
+            EmperorsElitesTradeDeck.Add(new Card("JammingTerminal", 5, Faction.StarEmpire,
                new List<Effect>() {
                     new Effect(EffectGroup.Priamry, EffectType.Combat, 2),
                     new Effect(EffectGroup.Priamry, EffectType.ForceToDiscard, 1),
                }, new Shield(ShieldType.White, 6)));
-            EmperorsEliteTradeDeck.Add(new Card("Hammerhead", 5, Faction.StarEmpire,
+            EmperorsElitesTradeDeck.Add(new Card("Hammerhead", 5, Faction.StarEmpire,
                new List<Effect>() {
                     new Effect(EffectGroup.Priamry, EffectType.Combat, 3),
                     new Effect(EffectGroup.Ally1, EffectType.Draw, 1),
@@ -309,7 +322,7 @@ public class CardSystem : MonoBehaviour
             EmperorsSubjectsTradeDeck = new List<Card>();
             for (int i = 0; i < 2; i++)
             {
-                EmperorsEliteTradeDeck.Add(new Card("CapturedOutpost", 3, Faction.StarEmpire,
+                EmperorsSubjectsTradeDeck.Add(new Card("CapturedOutpost", 3, Faction.StarEmpire,
                    new List<Effect>() {
                     new Effect(EffectGroup.Priamry, EffectType.Draw, 1),
                     new Effect(EffectGroup.Priamry, EffectType.Discard, 1),
@@ -317,7 +330,7 @@ public class CardSystem : MonoBehaviour
             }
             for (int i = 0; i < 3; i++)
             {
-                EmperorsEliteTradeDeck.Add(new Card("CargoCraft", 2, Faction.StarEmpire,
+                EmperorsSubjectsTradeDeck.Add(new Card("CargoCraft", 2, Faction.StarEmpire,
                    new List<Effect>() {
                     new Effect(EffectGroup.Priamry, EffectType.Trade, 2),
                     new Effect(EffectGroup.Priamry, EffectType.ForceToDiscard, 1),
@@ -326,7 +339,7 @@ public class CardSystem : MonoBehaviour
             }
             for (int i = 0; i < 2; i++)
             {
-                EmperorsEliteTradeDeck.Add(new Card("FarmShip", 4, Faction.StarEmpire,
+                EmperorsSubjectsTradeDeck.Add(new Card("FarmShip", 4, Faction.StarEmpire,
                    new List<Effect>() {
                     new Effect(EffectGroup.Priamry, EffectType.Trade, 3),
                     new Effect(EffectGroup.Priamry, EffectType.Draw, 1),
@@ -336,7 +349,7 @@ public class CardSystem : MonoBehaviour
             }
             for (int i = 0; i < 3; i++)
             {
-                EmperorsEliteTradeDeck.Add(new Card("FrontierHawk", 1, Faction.StarEmpire,
+                EmperorsSubjectsTradeDeck.Add(new Card("FrontierHawk", 1, Faction.StarEmpire,
                    new List<Effect>() {
                     new Effect(EffectGroup.Priamry, EffectType.Combat, 3),
                     new Effect(EffectGroup.Priamry, EffectType.Draw, 1),
@@ -345,7 +358,7 @@ public class CardSystem : MonoBehaviour
             }
             for (int i = 0; i < 3; i++)
             {
-                EmperorsEliteTradeDeck.Add(new Card("LightCruiser", 3, Faction.StarEmpire,
+                EmperorsSubjectsTradeDeck.Add(new Card("LightCruiser", 3, Faction.StarEmpire,
                    new List<Effect>() {
                     new Effect(EffectGroup.Priamry, EffectType.Combat, 4),
                     new Effect(EffectGroup.Priamry, EffectType.ForceToDiscard, 1),
@@ -355,12 +368,12 @@ public class CardSystem : MonoBehaviour
             }
             for (int i = 0; i < 2; i++)
             {
-                EmperorsEliteTradeDeck.Add(new Card("OrbitalGunPlatform", 4, Faction.StarEmpire,
+                EmperorsSubjectsTradeDeck.Add(new Card("OrbitalGunPlatform", 4, Faction.StarEmpire,
                        new List<Effect>() {
                     new Effect(EffectGroup.Priamry, EffectType.Combat, 3),
                     new Effect(EffectGroup.Scrap, EffectType.Trade, 3),
-                       }));
-            } 
+                       }, new Shield(ShieldType.Outpost, 4)));
+            }
             #endregion
         }
     }
@@ -390,6 +403,14 @@ public class CardSystem : MonoBehaviour
     public void GameStart()
     {
         InitTradeRow();
+
+        var eliteNextBuy = Instantiate(CardPrefab, ElitesDeckNextBuy);
+        eliteNextBuy.Set(EmperorsElitesTradeDeck[EmperorsElitesTradeDeck.Count - 1]);
+        eliteNextBuy.SetState(CardState.EnemyBuy);
+        var subjectiveNextBuy = Instantiate(CardPrefab, SubjectsDeckNextBuy);
+        subjectiveNextBuy.Set(EmperorsSubjectsTradeDeck[EmperorsSubjectsTradeDeck.Count - 1]);
+        subjectiveNextBuy.SetState(CardState.EnemyBuy);
+
     }
 
     private void InitTradeRow()
@@ -403,7 +424,6 @@ public class CardSystem : MonoBehaviour
                 Destroy(_tradeRow[i].gameObject);
                 _tradeRow.RemoveAt(i);
             }
-            _tradeRow.Clear();
         }
 
         for (int i = 0; i < 5; i++)
@@ -411,7 +431,6 @@ public class CardSystem : MonoBehaviour
             var newCard = Instantiate(CardPrefab, TradeRowLayout);
             _tradeRow.Add(newCard);
             Draw(i);
-            newCard.SetState(CardState.TradeRow);
         }
     }
 
@@ -434,23 +453,49 @@ public class CardSystem : MonoBehaviour
     private void Draw(int index)
     {
         _tradeRow[index].Set(_tradeDeck[_tradeDeck.Count - 1]);
+        _tradeRow[index].SetState(CardState.TradeRow);
         _tradeDeck.RemoveAt(_tradeDeck.Count - 1);
     }
 
-    public void OnBuy(CardController card)
+    public void OnPlayerBuy(CardController card)
     {
         int index = _tradeRow.FindIndex(p => p == card);
 
         Draw(index);
     }
 
-    public CardController CardPrefab;
+    public void BuyMostExpansive(ref int trade)
+    {
+        var affordable = new List<Card>();
+        Card elite = EmperorsElitesTradeDeck[EmperorsElitesTradeDeck.Count - 1];
+        if (elite.Cost <= trade)
+            affordable.Add(elite);
+        Card subject = EmperorsSubjectsTradeDeck[EmperorsSubjectsTradeDeck.Count - 1];
+        if (subject.Cost <= trade)
+            affordable.Add(subject);
 
-    public List<Card> StartingDeck;
-    private List<Card> _tradeDeck;
-    public Transform TradeRowLayout;
-    private List<CardController> _tradeRow;
-    public List<Card> TradeRow => _tradeRow.ConvertAll(p => p.Card);
-    public List<Card> EmperorsEliteTradeDeck;
-    public List<Card> EmperorsSubjectsTradeDeck;
+        if (affordable.Count == 0)
+        {
+            trade = 0;
+            return;
+        }
+
+        affordable.Sort(delegate (Card card1, Card card2)
+        {
+            return card1.Cost.CompareTo(card2.Cost);
+        });
+        Card mostExpansive = affordable[0];
+
+        if (mostExpansive == elite)
+        {
+            EmperorsElitesTradeDeck.Remove(elite);
+        }
+        if (mostExpansive == subject)
+        {
+            EmperorsElitesTradeDeck.Remove(elite);
+        }
+
+        trade -= mostExpansive.Cost;
+        EnemyController.instance.OnBuy(mostExpansive);
+    }
 }

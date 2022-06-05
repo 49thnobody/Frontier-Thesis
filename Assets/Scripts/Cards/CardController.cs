@@ -30,10 +30,17 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         State = state;
         switch (State)
         {
-            case CardState.TradeRow:
             case CardState.DiscardPile:
             case CardState.EnemyBuy:
+                gameObject.GetComponent<RectTransform>().localScale = new Vector3(0.5f, 0.5f, 1f);
+                if (IsBase)
+                    transform.Rotate(new Vector3(0, 0, -90));
+                else
+                    transform.Rotate(new Vector3(0, 0, 90));
+                break;
             case CardState.Basement:
+            case CardState.TradeRow:
+                gameObject.GetComponent<RectTransform>().localScale = new Vector3(1f, 1f, 1f);
                 if (IsBase)
                     transform.Rotate(new Vector3(0, 0, -90));
                 else
@@ -43,6 +50,7 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
             case CardState.PlayArea:
             case CardState.ScrapPanel:
             case CardState.DiscardPanel:
+                gameObject.GetComponent<RectTransform>().localScale = new Vector3(1f, 1f, 1f);
                 transform.Rotate(new Vector3(0, 0, 0));
                 break;
             default:
@@ -110,7 +118,7 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
                 if (PlayAreaController.instance.BuyCard(Card))
                 {
                     PlayerController.instance.OnBuy(Card);
-                    CardSystem.instance.OnBuy(this);
+                    CardSystem.instance.OnPlayerBuy(this);
                 }
             }
             if (resource.Type == ResourceType.Combat && IsBase)
