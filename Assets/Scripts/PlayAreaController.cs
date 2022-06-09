@@ -30,6 +30,7 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
     private Dictionary<Faction, int> _factions;
 
     private Turn _turn;
+    public Turn Turn => _turn;
 
     private void Start()
     {
@@ -46,6 +47,7 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
     {
         _turn = Turn.PlayerTurn;
         Reset();
+        OnStartTurn();
     }
 
     private void OnStartTurn()
@@ -53,18 +55,30 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
         switch (_turn)
         {
             case Turn.PlayerTurn:
+                Reset();
                 var basesP = PlayerController.instance.Bases.ConvertAll(p => p.Card);
 
                 foreach (var @base in basesP)
                 {
+                    foreach (var effect in @base.Effects)
+                    {
+                        effect.IsApplied = false;
+                    }
                     PlayCard(@base);
                 }
+
+                PlayerController.instance.StartTurn();
                 break;
             case Turn.EnemyTurn:
+                Reset();
                 var basesE = EnemyController.instance.Bases.ConvertAll(p => p.Card);
 
                 foreach (var @base in basesE)
                 {
+                    foreach (var effect in @base.Effects)
+                    {
+                        effect.IsApplied = false;
+                    }
                     PlayCard(@base);
                 }
 
@@ -96,10 +110,10 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
                 }
 
                 EnemyController.instance.TakeDamage(_combat);
+                PlayerController.instance.AddAuthority(_authority);
                 PlayerController.instance.EndTurn();
                 _turn = Turn.EnemyTurn;
                 ButtonEndTurn.enabled = false;
-                Reset();
                 OnStartTurn();
                 break;
             case Turn.EnemyTurn:
@@ -129,6 +143,14 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
         }
     }
 
+    public void DestroyBase(CardController @base)
+    {
+        _combat-=@base.Card.Shield.HP;
+        Combat.UpdateValue(_combat);
+        _cards.Remove(@base.Card);
+        EnemyController.instance.DestroyBase(@base);
+    }
+
     public void EnemyBuy()
     {
         do
@@ -144,6 +166,10 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
         Combat.UpdateValue(_combat);
         Authority.UpdateValue(_authority);
         _cards.Clear();
+        _factions[Faction.Slugs] = 0;
+        _factions[Faction.Technocult] = 0;
+        _factions[Faction.StarEmpire] = 0;
+        _factions[Faction.TradeFederation] = 0;
 
         var cardCs = CardLayout.GetComponentsInChildren<CardController>();
         for (int i = cardCs.Length - 1; i >= 0; i--)
@@ -174,6 +200,7 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
             }
         }
 
+        cardC.SetState(CardState.PlayArea);
         PlayCard(card);
     }
 
@@ -202,7 +229,7 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
             {
                 foreach (var effect in card.Ally1Effects)
                 {
-                    if (!effect.IsApplied) PlayEffect(effect);
+                    PlayEffect(effect);
                 }
             }
 
@@ -210,7 +237,7 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
             {
                 foreach (var effect in card.Allly2Effects)
                 {
-                    if (!effect.IsApplied) PlayEffect(effect);
+                    PlayEffect(effect);
                 }
             }
         }
@@ -218,6 +245,8 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
 
     public void PlayEffect(Effect effect)
     {
+        if (effect.IsApplied) return;
+        
         switch (effect.Type)
         {
             case EffectType.Trade:
@@ -264,7 +293,8 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
                 break;
             case EffectType.ScrapFromHand:
                 List<Card> cardsToSelectHand = new List<Card>();
-                cardsToSelectHand.AddRange(PlayerController.instance.Hand);
+                cardsToSelectHand.AddRange(PlayerController.instance.Hand.
+                    FindAll(p => p.State == CardState.Hand).ConvertAll(p => p.Card));
 
                 ScrapController.instance.Show(cardsToSelectHand, effect.Value, effect);
                 break;
@@ -277,7 +307,8 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
             case EffectType.ScrapFromHandOrDiscardPile:
                 List<Card> cardsToSelectAny = new List<Card>();
                 cardsToSelectAny.AddRange(PlayerController.instance.DiscardPile);
-                cardsToSelectAny.AddRange(PlayerController.instance.Hand);
+                cardsToSelectAny.AddRange(PlayerController.instance.Hand.
+                    FindAll(p => p.State == CardState.Hand).ConvertAll(p => p.Card));
 
                 ScrapController.instance.Show(cardsToSelectAny, effect.Value, effect);
                 break;
@@ -303,9 +334,16 @@ public class PlayAreaController : MonoBehaviour, IDropHandler
 
     public void PlaceEnemyCard(Card card)
     {
-        var newCard = Instantiate(CardPrefab, CardLayout);
+        CardController newCard = Instantiate(CardPrefab);
         newCard.Set(card);
-        newCard.SetState(CardState.PlayArea);
+        if (newCard.IsBase)
+            EnemyController.instance.PlaceBase(newCard);
+        else
+        {
+            newCard.Place(CardLayout); 
+            newCard.SetState(CardState.PlayArea);
+        }
+        
         PlayCard(card);
     }
 

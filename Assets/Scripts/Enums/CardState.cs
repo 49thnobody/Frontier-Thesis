@@ -6,6 +6,7 @@
     PlayArea,
     Basement,
     EnemyBuy,
-    ScrapPanel,
-    DiscardPanel
+    Panel,
+    Selected,
+    Cancel
 }

@@ -1,6 +1,7 @@
+using System;
 using System.Collections.Generic;
 
-public class Effect
+public class Effect : ICloneable
 {
     public EffectGroup Group;
     public EffectType Type;
@@ -14,5 +15,10 @@ public class Effect
         Value = value;
         Group = group;
         IsApplied = false;
+    }
+
+    public object Clone()
+    {
+        return new Effect(Group, Type, Value);
     }
 }

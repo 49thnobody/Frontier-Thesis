@@ -13,43 +13,53 @@ public class ScrapController : MonoBehaviour
     {
         instance = this;
         _dropController = GetComponentInChildren<DropController>(true);
-        OkButton.onClick.AddListener(OkOnClick);
-        Canceuttonl.onClick.AddListener(CancelOnClick);
+        _okButton.onClick.AddListener(OkOnClick);
+        _cancelButton.onClick.AddListener(CancelOnClick);
         _dropController.OnScrapDrop += OnDrop;
     }
 
+    int _currentAmount;
     private void OnDrop(CardController card)
     {
-        card.Parent = SelectedCardLayout;
+        card.Place( _selectedCardLayout);
+        card.SetState(CardState.Selected);
+        _currentAmount++;
+
+        if (_currentAmount == _neededAmount)
+        {
+            OkOnClick();
+        }
     }
 
     private DropController _dropController;
 
-    public GameObject ScrapPanel;
-    public TextMeshProUGUI AmountOfCards;
-    public Transform AllCardLayout;
-    public Transform SelectedCardLayout;
-    public CardController CardPrefab;
-    public Button OkButton;
-    public Button Canceuttonl;
+    [SerializeField] private GameObject _scrapPanel;
+    [SerializeField] private TextMeshProUGUI _amountOfCards;
+    private int _neededAmount;
+    [SerializeField] private Transform _allCardLayout;
+    [SerializeField] private Transform _selectedCardLayout;
+    [SerializeField] private CardController _cardPrefab;
+    [SerializeField] private Button _okButton;
+    [SerializeField] private Button _cancelButton;
 
     private Effect _effectReference;
     public void Show(List<Card> cardsToChoose, int amount, Effect effectRef)
     {
-        ScrapPanel.SetActive(true);
+        _scrapPanel.SetActive(true);
         _effectReference = effectRef;
-        AmountOfCards.text = amount.ToString();
+        _neededAmount = amount;
+        _amountOfCards.text = amount.ToString();
         foreach (var card in cardsToChoose)
         {
-            var newCard = Instantiate(CardPrefab, AllCardLayout);
+            var newCard = Instantiate(_cardPrefab, _allCardLayout);
             newCard.Set(card);
-            newCard.SetState(CardState.ScrapPanel);
+            newCard.SetState(CardState.Panel);
         }
     }
 
     public void OkOnClick()
     {
-        var cardsToScrap = SelectedCardLayout.GetComponentsInChildren<CardController>();
+        var cardsToScrap = _selectedCardLayout.GetComponentsInChildren<CardController>();
 
         foreach (var card in cardsToScrap)
         {
@@ -62,22 +72,23 @@ public class ScrapController : MonoBehaviour
 
     private void Reset()
     {
-        var selected = SelectedCardLayout.GetComponentsInChildren<CardController>();
-        for (int i = selected.Length - 1; i >= 0; i--)
+        for (int i = _selectedCardLayout.childCount - 1; i >= 0; i--)
         {
-            Destroy(selected[i].gameObject);
+            Destroy(_selectedCardLayout.GetChild(i).gameObject);
         }
-
-        var all = AllCardLayout.GetComponentsInChildren<CardController>();
-        for (int i = all.Length - 1; i >= 0; i--)
+        for (int i = _allCardLayout.childCount - 1; i >= 0; i--)
         {
-            Destroy(all[i].gameObject);
+            Destroy(_allCardLayout.GetChild(i).gameObject);
         }
     }
 
     public void CancelOnClick()
     {
+        for (int i = 0; i < _selectedCardLayout.childCount; i++)
+        {
+            _selectedCardLayout.GetChild(i).GetComponent<CardController>().SetState(CardState.Cancel);
+        }
         Reset();
-        ScrapPanel.SetActive(false);
+        _scrapPanel.SetActive(false);
     }
 }

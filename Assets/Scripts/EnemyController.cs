@@ -42,7 +42,7 @@ public class EnemyController : MonoBehaviour
             DrawCard();
         }
 
-        PlayAreaController.instance.OnEndTurn();  
+        PlayAreaController.instance.OnEndTurn();
     }
 
     public void DrawCard()
@@ -50,8 +50,18 @@ public class EnemyController : MonoBehaviour
         if (_deck.Count == 0)
             Shuffle();
 
-        _handCards.Add(_deck[_deck.Count - 1]);
-        _deck.RemoveAt(_deck.Count - 1);
+        int last = _deck.Count - 1;
+        _handCards.Add(_deck[last]);
+        foreach (var effect in _deck[last].Effects)
+        {
+            effect.IsApplied = false;
+        }
+        if (_deck[last].Shield != null) _deck[last].Shield.IsPlaced = false;
+        _deck.RemoveAt(last);
+        _handCards.Sort(delegate (Card card1, Card card2)
+        {
+            return card1.Cost.CompareTo(card2.Cost);
+        });
     }
 
     private void Discard(Card card)
@@ -66,7 +76,8 @@ public class EnemyController : MonoBehaviour
     public void PlaceBase(CardController card)
     {
         Bases.Add(card);
-        card.Parent = BaseLayout;
+        card.Place(BaseLayout);
+        card.SetState(CardState.Basement);
     }
 
     public void DiscardBase(CardController basement)
@@ -81,7 +92,7 @@ public class EnemyController : MonoBehaviour
     {
         Authority.UpdateValue(Authority.Value - damage);
         if (Authority.Value <= 0)
-            ;//lose
+            EndGameController.instance.Show(true);
     }
 
     private void Shuffle()
@@ -101,7 +112,7 @@ public class EnemyController : MonoBehaviour
 
     public IEnumerator OnMyTurn()
     {
-        while (_handCards.Count>0)
+        while (_handCards.Count > 0)
         {
             PlayAreaController.instance.PlaceEnemyCard(_handCards[_handCards.Count - 1]);
             Discard(_handCards[_handCards.Count - 1]);
@@ -121,8 +132,12 @@ public class EnemyController : MonoBehaviour
     public void GameStart()
     {
         Reset();
-        _deck.AddRange(CardSystem.instance.StartingDeck);
+        foreach (var card in CardSystem.instance.StartingDeck)
+        {
+            _deck.Add(card.Clone() as Card);
+        }
 
+        Shuffle();
         for (int i = 0; i < 5; i++)
         {
             DrawCard();
@@ -145,25 +160,26 @@ public class EnemyController : MonoBehaviour
         _deck.Clear();
     }
 
-    internal void DiscardCard()
+    public void DiscardCard()
     {
-        var cards = new List<Card>();
-        cards.AddRange(_deck);
-        cards.Sort(delegate (Card card1, Card card2)
-        {
-            return card1.Cost.CompareTo(card2.Cost);
-        });
+        if (_handCards.Count == 0) return;
 
         int i = 0;
         var cardsToDiscard = new List<Card>();
         do
         {
-            cardsToDiscard.Add(cards[i]);
+            cardsToDiscard.Add(_handCards[i]);
             i++;
-        } while (cards[i].Cost == cards[i - 1].Cost);
+        } while (i < _handCards.Count && _handCards[i].Cost == _handCards[i - 1].Cost);
 
         int index = UnityEngine.Random.Range(0, cardsToDiscard.Count);
 
         Discard(cardsToDiscard[index]);
+    }
+
+    public void DestroyBase(CardController @base)
+    {
+        Bases.Remove(@base);
+        Destroy(@base.gameObject);
     }
 }

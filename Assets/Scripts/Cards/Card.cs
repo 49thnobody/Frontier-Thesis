@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
-public class Card
+public class Card : ICloneable
 {
     public string Name;
     public int Cost;
@@ -31,5 +31,15 @@ public class Card
         Shield = shield;
         Effects = effects;
         Sprite = Resources.Load<Sprite>($"Cards/{Name}");
+    }
+
+    public object Clone()
+    {
+        var effects = new List<Effect>();
+        foreach (Effect effect in Effects)
+        {
+            effects.Add(effect.Clone() as Effect);
+        }
+        return new Card(Name, Cost, Faction, effects, Shield == null ? null : Shield.Clone() as Shield);
     }
 }

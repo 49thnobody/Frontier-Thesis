@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -14,13 +15,18 @@ public class ResourceController : OutputController, IBeginDragHandler, IDragHand
 
     private void Awake()
     {
-        _text = GetComponentInChildren<Text>();
+        _text = GetComponentInChildren<TextMeshProUGUI>();
         _mainCamera = Camera.main;
         _canvasGroup = GetComponent<CanvasGroup>();
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        if (PlayAreaController.instance.Turn != Turn.PlayerTurn)
+        {
+            eventData.pointerDrag = null;
+            return;
+        }
         _defaultPosition = transform.position;
         _offset = transform.position - _mainCamera.ScreenToWorldPoint(eventData.position);
         _canvasGroup.blocksRaycasts = false;

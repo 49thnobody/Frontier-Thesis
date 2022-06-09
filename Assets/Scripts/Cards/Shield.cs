@@ -1,4 +1,6 @@
-﻿public class Shield
+﻿using System;
+
+public class Shield : ICloneable
 {
     public ShieldType Type;
     public int HP;
@@ -10,5 +12,10 @@
         Type = type;
         HP = hP;
         IsPlaced = false;
+    }
+
+    public object Clone()
+    {
+        return new Shield(Type, HP);
     }
 }

@@ -229,7 +229,7 @@ public class CardSystem : MonoBehaviour
                 _tradeDeck.Add(new Card("FrontierRunner", 1, Faction.TradeFederation,
                   new List<Effect>() {
                     new Effect(EffectGroup.Priamry, EffectType.Trade, 2),
-                    new Effect(EffectGroup.Ally1, EffectType.Authority, 2),
+                    new Effect(EffectGroup.Priamry, EffectType.Authority, 2),
                   }));
             }
             _tradeDeck.Add(new Card("Gateship", 6, Faction.TradeFederation,
@@ -477,11 +477,16 @@ public class CardSystem : MonoBehaviour
     public void BuyMostExpansive(ref int trade)
     {
         var affordable = new List<Card>();
-        Card elite = EmperorsElitesTradeDeck[EmperorsElitesTradeDeck.Count - 1];
-        if (elite.Cost <= trade)
+
+        Card elite = null;
+        if (EmperorsElitesTradeDeck.Count > 0)
+            elite = EmperorsElitesTradeDeck[EmperorsElitesTradeDeck.Count - 1];
+        if (elite != null && elite.Cost <= trade)
             affordable.Add(elite);
-        Card subject = EmperorsSubjectsTradeDeck[EmperorsSubjectsTradeDeck.Count - 1];
-        if (subject.Cost <= trade)
+        Card subject = null;
+        if (EmperorsSubjectsTradeDeck.Count > 0)
+            subject = EmperorsSubjectsTradeDeck[EmperorsSubjectsTradeDeck.Count - 1];
+        if (subject != null && subject.Cost <= trade)
             affordable.Add(subject);
 
         if (affordable.Count == 0)
@@ -492,21 +497,27 @@ public class CardSystem : MonoBehaviour
 
         affordable.Sort(delegate (Card card1, Card card2)
         {
-            return card1.Cost.CompareTo(card2.Cost);
+            return card2.Cost.CompareTo(card1.Cost);
         });
         Card mostExpansive = affordable[0];
 
         if (mostExpansive == elite)
         {
             EmperorsElitesTradeDeck.Remove(elite);
-            _eliteLastCard.Set(EmperorsElitesTradeDeck[EmperorsElitesTradeDeck.Count - 1]);
-            _eliteLastCard.SetState(CardState.EnemyBuy);
+            if (EmperorsElitesTradeDeck.Count > 0)
+            {
+                _eliteLastCard.Set(EmperorsElitesTradeDeck[EmperorsElitesTradeDeck.Count - 1]);
+                _eliteLastCard.SetState(CardState.EnemyBuy);
+            }
         }
         if (mostExpansive == subject)
         {
             EmperorsSubjectsTradeDeck.Remove(subject);
-            _subjectLastCard.Set(EmperorsSubjectsTradeDeck[EmperorsSubjectsTradeDeck.Count - 1]);
-            _subjectLastCard.SetState(CardState.EnemyBuy);
+            if (EmperorsSubjectsTradeDeck.Count > 0)
+            {
+                _subjectLastCard.Set(EmperorsSubjectsTradeDeck[EmperorsSubjectsTradeDeck.Count - 1]);
+                _subjectLastCard.SetState(CardState.EnemyBuy);
+            }
         }
 
         trade -= mostExpansive.Cost;

@@ -24,18 +24,27 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         Image.sprite = card.Sprite;
     }
 
+    public   CardState _previosSate;
     public void SetState(CardState state)
     {
+        if (state == CardState.Panel) _previosSate = State;
+        if (state == CardState.Cancel) State = _previosSate;
         State = state;
         switch (State)
         {
-            case CardState.DiscardPile:
             case CardState.EnemyBuy:
                 gameObject.GetComponent<RectTransform>().localScale = new Vector3(0.5f, 0.5f, 1f);
                 if (IsBase)
-                    transform.eulerAngles = new Vector3(0, 0, -90);
+                    transform.eulerAngles = new Vector3(0, 0, 0);
                 else
-                    transform.eulerAngles = new Vector3(0, 0, 90);
+                    transform.eulerAngles = new Vector3(0, 0, 0);
+                break;
+            case CardState.DiscardPile:
+                gameObject.GetComponent<RectTransform>().localScale = new Vector3(0.6f, 0.6f, 1f);
+                if (IsBase)
+                    transform.eulerAngles = new Vector3(0, 0, 0);
+                else
+                    transform.eulerAngles = new Vector3(0, 0, 0);
                 break;
             case CardState.Basement:
             case CardState.TradeRow:
@@ -47,8 +56,8 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
                 break;
             case CardState.Hand:
             case CardState.PlayArea:
-            case CardState.ScrapPanel:
-            case CardState.DiscardPanel:
+            case CardState.Panel:
+            case CardState.Selected:
                 gameObject.GetComponent<RectTransform>().localScale = new Vector3(1f, 1f, 1f);
                 transform.Rotate(new Vector3(0, 0, 0));
                 break;
@@ -65,6 +74,7 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
 
     public void Place(Transform parent)
     {
+        Parent = parent;
         transform.SetParent(parent);
     }
 
@@ -82,14 +92,21 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if(State!=CardState.Hand)
+        if (PlayAreaController.instance.Turn != Turn.PlayerTurn)
         {
             eventData.pointerDrag = null;
             return;
         }
+
+        if (State != CardState.Hand && State != CardState.Panel && State != CardState.PlayArea && State != CardState.Basement)
+        {
+            eventData.pointerDrag = null;
+            return;
+        }
+
         _offset = transform.position - _mainCamera.ScreenToWorldPoint(eventData.position);
         Parent = transform.parent;
-        transform.SetParent(Parent.parent);
+        transform.SetParent(GetComponentInParent<Canvas>().transform);
         _canvasGroup.blocksRaycasts = false;
     }
 
@@ -109,7 +126,6 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
     #region Dropping
     public void OnDrop(PointerEventData eventData)
     {
-        CardController card = eventData.pointerDrag.GetComponent<CardController>();
         ResourceController resource = eventData.pointerDrag.GetComponent<ResourceController>();
 
         if (resource)
@@ -123,7 +139,11 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
                 }
             }
             if (resource.Type == ResourceType.Combat && IsBase)
-                ; // TODO - damage check and destroy base
+            {
+                if (resource.Value < Card.Shield.HP) return;
+
+                PlayAreaController.instance.DestroyBase(this);
+            }
         }
     }
     #endregion

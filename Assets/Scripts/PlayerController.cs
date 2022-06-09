@@ -13,7 +13,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private CardController CardPrefab;
     private List<CardController> _hand;
     private List<Card> _handCards;
-    public List<Card> Hand => _handCards;
+    public List<Card> HandCards => _handCards;
+    public List<CardController> Hand => _hand;
 
     [SerializeField] private Transform BaseLayout;
     public List<CardController> Bases;
@@ -49,9 +50,11 @@ public class PlayerController : MonoBehaviour
 
     private void PlayAllCards()
     {
-        foreach (var cardC in _hand)
+        for (int i = 0; i < _hand.Count; i++)
         {
-            PlayAreaController.instance.PlayCard(cardC);
+            if (_hand[i].Card.Effects.FindAll(p => p.Type.ToString().Contains("Scrap")).Count > 0)
+                continue;
+            PlayAreaController.instance.PlayCard(_hand[i]);
         }
     }
 
@@ -59,7 +62,13 @@ public class PlayerController : MonoBehaviour
     {
         Authority.UpdateValue(Authority.Value - damage);
         if (Authority.Value <= 0)
-            ;//lose
+            EndGameController.instance.Show(true);
+    }
+
+    public void AddAuthority(int authority)
+    {
+        if (authority < 0) return;
+        Authority.UpdateValue(Authority.Value + authority);
     }
 
     private void OnScrap(Card card)
@@ -72,6 +81,12 @@ public class PlayerController : MonoBehaviour
             _hand.Remove(cardC);
             Destroy(cardC.gameObject);
         }
+        if (Bases.ConvertAll(p => p.Card).Contains(card))
+        {
+            var cardC = Bases.Find(p => p.Card == card);
+            Bases.Remove(cardC);
+            Destroy(cardC.gameObject);
+        }
     }
 
     public void GameStart()
@@ -79,7 +94,10 @@ public class PlayerController : MonoBehaviour
         _discardLastCard = Instantiate(CardPrefab, _discardPileTransform);
         UpdateDiscardImage();
         Reset();
-        _deck.AddRange(CardSystem.instance.StartingDeck);
+        foreach (var card in CardSystem.instance.StartingDeck)
+        {
+            _deck.Add(card.Clone() as Card);
+        }
         Shuffle();
 
         for (int i = 0; i < 5; i++)
@@ -91,12 +109,14 @@ public class PlayerController : MonoBehaviour
     public void EndTurn()
     {
         _discardCount = 0;
-        _discardPile.AddRange(_handCards);
+        _discardPile.AddRange(_handCards.FindAll(p => p.Shield == null));
         _handCards.Clear();
 
         for (int i = _hand.Count - 1; i >= 0; i--)
         {
-            Destroy(_hand[i].gameObject);
+            if (!_hand[i].IsBase || !_hand[i].Card.Shield.IsPlaced)
+                Destroy(_hand[i].gameObject);
+
             _hand.RemoveAt(i);
         }
         UpdateDiscardImage();
@@ -105,6 +125,8 @@ public class PlayerController : MonoBehaviour
         {
             DrawCard();
         }
+
+        _playAllCards.enabled = false;
     }
 
     private void Reset()
@@ -134,11 +156,17 @@ public class PlayerController : MonoBehaviour
         if (_deck.Count == 0)
             Shuffle();
 
-        CardController card = Instantiate(CardPrefab, HandLayout);
-        card.Set(_deck[_deck.Count - 1]);
-        card.SetState(CardState.Hand);
-        _handCards.Add(_deck[_deck.Count - 1]);
-        _hand.Add(card);
+        Card card = _deck[_deck.Count - 1];
+        foreach (var effect in card.Effects)
+        {
+            effect.IsApplied = false;
+        }
+        if (card.Shield != null) card.Shield.IsPlaced = false;
+        CardController cardC = Instantiate(CardPrefab, HandLayout);
+        cardC.Set(card);
+        cardC.SetState(CardState.Hand);
+        _handCards.Add(card);
+        _hand.Add(cardC);
         _deck.RemoveAt(_deck.Count - 1);
         _deckCardCount.text = _deck.Count.ToString();
     }
@@ -147,6 +175,15 @@ public class PlayerController : MonoBehaviour
     public void DiscardOnStart()
     {
         _discardCount++;
+    }
+
+    public void StartTurn()
+    {
+        _playAllCards.enabled = true;
+        if (_discardCount == 0) return;
+        if (EnemyController.instance.Authority.Value <= 0) return;
+        if (Authority.Value <= 0) return;
+        DiscardController.instance.Show(_handCards, _discardCount);
     }
 
     public void Discard(List<Card> cards)
@@ -166,7 +203,6 @@ public class PlayerController : MonoBehaviour
 
     public void DiscardBase(CardController basement)
     {
-        basement.Card.Shield.IsPlaced = false;
         _discardPile.Add(basement.Card);
         UpdateDiscardImage();
         Bases.Remove(basement);
@@ -206,6 +242,7 @@ public class PlayerController : MonoBehaviour
     public void PlaceBase(CardController card)
     {
         Bases.Add(card);
-        card.Parent = BaseLayout;
+        card.Place(BaseLayout);
+        card.SetState(CardState.Basement);
     }
 }
