@@ -5,11 +5,10 @@ using UnityEngine.UI;
 public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
 {
     #region Card Info
-    // card
     public Card Card;
     public CardState State { get; private set; }
 
-    // cash for quick coding
+    // информация о том, какие эффекты есть у этой карты - для удобства
     public bool IsBase => Card == null ? false : Card.Shield != null;
     public bool HaveAlly1Effect => Card.Effects.FindAll(p => p.Group == EffectGroup.Ally1).Count > 0;
     public bool HaveAlly2Effect => Card.Effects.FindAll(p => p.Group == EffectGroup.Ally2).Count > 0;
@@ -18,18 +17,25 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
 
     public Image Image;
 
+    // иницализация карты
     public void Set(Card card)
     {
         Card = card;
         Image.sprite = card.Sprite;
     }
 
-    public   CardState _previosSate;
+    // кэш предыдущего состояния карты - в целом только для отмны утилизации карты
+    private CardState _previosSate;
+    // инициализация состояния карты
     public void SetState(CardState state)
     {
+        // сохранение предыдущего состояния
         if (state == CardState.Panel) _previosSate = State;
+        // возвращение предыдущего состояния если действие над картой отменено
         if (state == CardState.Cancel) State = _previosSate;
         State = state;
+        // здесь происходит поворот и изменение карты в зависимости от того,
+        // где она размещена
         switch (State)
         {
             case CardState.EnemyBuy:
@@ -66,22 +72,31 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         }
     }
 
+    // утилизация карты
     public void Scrap()
     {
+        // передаем карту в CardSystem - этот скрипт отвечает
+        // за удаление всех ссылок на утилизируемую карту
         CardSystem.instance.ToScrap(Card);
         Destroy(gameObject);
     }
 
+    // принудительное размещение карты (требуется для разыгрывания карты без участия Drag&Drop
+    // то есть разыгрывание всех карт с руки и разыгрывание карт противника
     public void Place(Transform parent)
     {
         Parent = parent;
         transform.SetParent(parent);
     }
 
+    // весь код в данном регионе отвечает за перетаскивание карты
     #region Dragging
     public Transform Parent;
     private Camera _mainCamera;
     private Vector3 _offset;
+    // вот это интересно - данный компонент нужен из-за того,
+    // что с элементами интерфейса Drag&Drop работает не корректно
+    // без отключения рейкаста у этого компонента не вызовается событие OnDrop
     private CanvasGroup _canvasGroup;
 
     private void Awake()
@@ -90,58 +105,84 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         _canvasGroup = GetComponent<CanvasGroup>();
     }
 
+    // начало перетаскивания 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        // если не ход игрока - карты перетаскивать нельзя
         if (PlayAreaController.instance.Turn != Turn.PlayerTurn)
         {
             eventData.pointerDrag = null;
             return;
         }
 
+        // так же если карта не находится в руке, панели выбора или в игровой зоне, её так же нельзя перетаскивать
         if (State != CardState.Hand && State != CardState.Panel && State != CardState.PlayArea && State != CardState.Basement)
         {
             eventData.pointerDrag = null;
             return;
         }
 
+        // инициализация оффсета - отступа, чтобы карта не перескакивала центром к курсору
         _offset = transform.position - _mainCamera.ScreenToWorldPoint(eventData.position);
+        // кжширование родителя
         Parent = transform.parent;
+        // назначение родителя - самого "верхнего" в иерархии
         transform.SetParent(GetComponentInParent<Canvas>().transform);
+        // ну и блок рейкаста
         _canvasGroup.blocksRaycasts = false;
     }
 
+    // перетаскивание
     public void OnDrag(PointerEventData eventData)
     {
-        Vector3 newPos = _mainCamera.ScreenToWorldPoint(eventData.position);
-        transform.position = newPos + _offset;
+        // определение позиции курсора
+        Vector3 pointerPos = _mainCamera.ScreenToWorldPoint(eventData.position);
+        // перемещение карты
+        transform.position = pointerPos + _offset;
     }
 
+    // конец перетаскивания
+    // перед этим событием срабатывает OnDrop
     public void OnEndDrag(PointerEventData eventData)
     {
+        // назначение родителя назад (предыдущего либо нового, он задается в OnDrop)
         transform.SetParent(Parent);
+        // снова разрешаем тыкать на карту (не блокируем рейкасты)
         _canvasGroup.blocksRaycasts = true;
     }
     #endregion
 
+    // этот регион отвечает за ситуации, когда что-то "уронили" на карту
     #region Dropping
     public void OnDrop(PointerEventData eventData)
     {
+        // на карту можно "уронить" толькр ресурс
         ResourceController resource = eventData.pointerDrag.GetComponent<ResourceController>();
 
         if (resource)
         {
+            // если на карту "уронили" очки торговли и карта находится в торговом ряду, 
+            // её нужно купить
             if (resource.Type == ResourceType.Trade && State == CardState.TradeRow)
             {
+                // проверка, хватает ли очков торговли и сразу тратим их, если хватает
                 if (PlayAreaController.instance.BuyCard(Card))
                 {
+                    // покупка карты таким образом, через Drag&Drop, осуществяется только игроком
+                    // вызываем событие Покупка карты, чтобы добавить карту в сброс игрока
                     PlayerController.instance.OnBuy(Card);
+                    // и обновить карту в торговом ряду
                     CardSystem.instance.OnPlayerBuy(this);
                 }
             }
-            if (resource.Type == ResourceType.Combat && IsBase)
+            // если на карту "уронили" очки сражений, карта является базой и она находится не в руке, 
+            // её нужно сломать
+            if (resource.Type == ResourceType.Combat && IsBase && State==CardState.Basement)
             {
+                // проверка хватает ли урона
                 if (resource.Value < Card.Shield.HP) return;
 
+                // передача карты в другой скрипт, где она уничтожится
                 PlayAreaController.instance.DestroyBase(this);
             }
         }

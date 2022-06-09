@@ -1,12 +1,13 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 public class ResourceController : OutputController, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
+    // тип ресурса
     public ResourceType Type;
 
+    // перетаскивание
     #region Dragging
     private Vector3 _defaultPosition;
     private Camera _mainCamera;

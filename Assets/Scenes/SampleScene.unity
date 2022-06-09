@@ -2810,10 +2810,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2dbbdb67eb1de624fac6e98f9c47e6d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Trade: {fileID: 126479548}
-  Combat: {fileID: 1586752535}
-  Authority: {fileID: 998363678}
-  CardLayout: {fileID: 1246948466}
+  _trade: {fileID: 126479548}
+  _combat: {fileID: 1586752535}
+  _authority: {fileID: 998363678}
+  _cardLayout: {fileID: 1246948466}
   CardPrefab: {fileID: 8511597651262351300, guid: c0b338e65a47dbb41b1d36f6d0b2cb59, type: 3}
   ButtonEndTurn: {fileID: 1440980356}
 --- !u!222 &407963882
