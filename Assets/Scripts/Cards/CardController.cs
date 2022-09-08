@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -15,13 +16,27 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
     public bool HaveScrapEffect => Card.Effects.FindAll(p => p.Group == EffectGroup.Scrap).Count > 0;
     #endregion
 
-    public Image Image;
+    [SerializeField] private CardUIController _shipUI;
+    [SerializeField] private CardUIController _baseUI;
+
+    [SerializeField] private TextMeshProUGUI _name;
+    [SerializeField] private Image _image;
+    [SerializeField] private Image _faction;
+    [SerializeField] private Image _costImage;
+    [SerializeField] private TextMeshProUGUI _costText;
+
+    [SerializeField] private Transform _effectsLayout;
+    [SerializeField] private EffectGroupController _effectGroupPrefab;
 
     // иницализация карты
     public void Set(Card card)
     {
         Card = card;
-        Image.sprite = card.Sprite;
+
+        if (IsBase)
+            _baseUI.ShowUI(Card, true);
+        else
+            _shipUI.ShowUI(Card, false);
     }
 
     // кэш предыдущего состояния карты - в целом только для отмны утилизации карты
@@ -177,7 +192,7 @@ public class CardController : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
             }
             // если на карту "уронили" очки сражений, карта является базой и она находится не в руке, 
             // её нужно сломать
-            if (resource.Type == ResourceType.Combat && IsBase && State==CardState.Basement)
+            if (resource.Type == ResourceType.Combat && IsBase && State == CardState.Basement)
             {
                 // проверка хватает ли урона
                 if (resource.Value < Card.Shield.HP) return;

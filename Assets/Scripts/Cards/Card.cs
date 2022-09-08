@@ -10,7 +10,6 @@ public class Card : ICloneable
     public Faction Faction;
     public List<Effect> Effects;
     public Shield Shield;
-    public Sprite Sprite;
 
     public List<Effect> PrimaryEffects => Effects.FindAll(p => p.Group == EffectGroup.Priamry);
 
@@ -30,7 +29,6 @@ public class Card : ICloneable
         Effects = effects;
         Shield = shield;
         Effects = effects;
-        Sprite = Resources.Load<Sprite>($"Cards/{Name}");
     }
 
     public object Clone()
